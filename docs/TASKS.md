@@ -55,9 +55,9 @@ ppm i drizzle-orm@rc @libsql/client dotenv
 
 # Phase 2 — SQLite + API
 
-- [ ] Configure Drizzle
-- [ ] Create SQLite database
-- [ ] Add projects schema
+- [x] Configure Drizzle
+- [x] Create SQLite database
+- [x] Add projects schema
 - [ ] Add render jobs schema
 - [ ] Add migrations
 - [ ] Add project repository
