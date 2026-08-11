@@ -35,22 +35,22 @@ pnpm test
 
 # Phase 1 — UI shell
 
-- [ ] Add Tailwind
-- [ ] Add Lucide
-- [ ] Build AppShell
-- [ ] Build sidebar/project navigation
-- [ ] Build project creation screen
-- [ ] Build script editor
-- [ ] Build timestamp input
-- [ ] Build video picker UI
-- [ ] Build template selector
-- [ ] Build voice selector
-- [ ] Build render status UI
+- [x] Add Tailwind
+- [x] Add Lucide
+- [x] Build AppShell
+- [x] Build sidebar/project navigation
+- [x] Build project creation screen
+- [x] Build script editor
+- [x] Build timestamp input
+- [x] Build video picker UI
+- [x] Build template selector
+- [x] Build voice selector
+- [x] Build render status UI
 
 Use mocked data initially if it speeds development.
 
 Do not over-polish animations.
-
+ppm i drizzle-orm@rc @libsql/client dotenv
 ---
 
 # Phase 2 — SQLite + API
