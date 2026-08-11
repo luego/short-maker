@@ -10,17 +10,17 @@ Complete phases in order.
 
 # Phase 0 — Repository
 
-- [ ] Initialize pnpm workspace
-- [ ] Create `apps/web`
-- [ ] Create `apps/server`
-- [ ] Create `packages/shared`
-- [ ] Configure TypeScript
-- [ ] Configure ESLint
-- [ ] Configure Prettier
-- [ ] Add root scripts
-- [ ] Add `.gitignore`
-- [ ] Add media directories
-- [ ] Add `AGENTS.md`
+- [x] Initialize pnpm workspace
+- [x] Create `apps/web`
+- [x] Create `apps/server`
+- [x] Create `packages/shared`
+- [x] Configure TypeScript
+- [x] Configure ESLint
+- [x] Configure Prettier
+- [x] Add root scripts
+- [x] Add `.gitignore`
+- [x] Add media directories
+- [x] Add `AGENTS.md`
 
 Expected root commands:
 
