@@ -1,9 +1,11 @@
-import { useState } from 'react'
-
-export default function TemplateSelect({ templates, selected, onChange }: {
-  templates: string[]
-  selected: string | undefined
-  onChange: (value: string) => void
+export default function TemplateSelect({
+  templates,
+  selected,
+  onChange,
+}: {
+  templates: string[];
+  selected: string | undefined;
+  onChange: (value: string) => void;
 }) {
   return (
     <div className="mb-4">
@@ -20,5 +22,5 @@ export default function TemplateSelect({ templates, selected, onChange }: {
         ))}
       </select>
     </div>
-  )
+  );
 }

@@ -9,5 +9,8 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
   }
 }

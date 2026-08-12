@@ -1,8 +1,9 @@
-import { useState } from 'react'
-
-export default function TimestampInput({ value, onChange }: {
-  value: string
-  onChange: (v: string) => void
+export default function TimestampInput({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
 }) {
   return (
     <div className="mb-4">
@@ -15,5 +16,5 @@ export default function TimestampInput({ value, onChange }: {
         className="border rounded p-2 w-full"
       />
     </div>
-  )
+  );
 }

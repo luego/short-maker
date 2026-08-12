@@ -1,25 +1,47 @@
-import { useState } from 'react'
+import { Upload } from "lucide-react";
 
-export default function VideoPicker({ onFileSelected }: { onFileSelected?: (file: File | null) => void }) {
-  const [file, setFile] = useState<File | null>(null)
+interface VideoPickerProps {
+  file: File | null;
+  previewUrl: string | null;
+  disabled?: boolean;
+  onFileSelected: (file: File | null) => void;
+}
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const f = e.target.files[0]
-      setFile(f ?? null)
-      onFileSelected?.(f ?? null)
-    }
-  }
-
+export default function VideoPicker({
+  file,
+  previewUrl,
+  disabled,
+  onFileSelected,
+}: VideoPickerProps) {
   return (
-    <div className="mb-4">
-      <label className="block text-sm font-medium mb-1">Source Video</label>
-      <input type="file" accept="video/*" onChange={handleChange} className="border rounded p-2 w-full" />
-      {file && (
-        <p className="mt-1 text-sm text-gray-500">
-          Selected: {file.name}
-        </p>
+    <div className="mb-5">
+      <label className="mb-2 block text-sm font-medium" htmlFor="source-video">
+        Source video
+      </label>
+      <label
+        htmlFor="source-video"
+        className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-gray-300 bg-gray-50 px-4 py-5 text-sm text-gray-600 hover:border-blue-500"
+      >
+        <Upload size={18} />
+        {file ? file.name : "Choose an MP4, MOV, or MKV video"}
+      </label>
+      <input
+        id="source-video"
+        type="file"
+        accept=".mp4,.mov,.mkv,video/mp4,video/quicktime,video/x-matroska"
+        disabled={disabled}
+        onChange={(event) => onFileSelected(event.target.files?.[0] ?? null)}
+        className="sr-only"
+      />
+      {previewUrl && (
+        <video
+          className="mt-3 aspect-video w-full rounded-md bg-black"
+          controls
+          src={previewUrl}
+        >
+          Your browser does not support video playback.
+        </video>
       )}
     </div>
-  )
+  );
 }

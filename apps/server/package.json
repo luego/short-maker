@@ -4,19 +4,29 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --watch --experimental-strip-types src/server.ts",
-    "build": "tsc"
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
     "@libsql/client": "^0.17.4",
+    "@short-maker/shared": "workspace:*",
     "dotenv": "^17.4.2",
-    "drizzle-orm": "1.0.0-rc.4",
-    "express": "^5.2.1"
+    "drizzle-orm": "0.45.2",
+    "express": "^5.2.1",
+    "multer": "^2.2.0",
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
+    "@types/multer": "^2.2.0",
     "@types/node": "^26.2.0",
-    "drizzle-kit": "1.0.0-rc.4",
-    "tsx": "^4.23.12"
+    "@types/supertest": "^7.2.1",
+    "drizzle-kit": "0.31.10",
+    "supertest": "^7.2.2",
+    "tsx": "^4.23.12",
+    "vitest": "^4.1.10"
   }
 }

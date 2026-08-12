@@ -1,5 +1,6 @@
 node_modules/
 dist/
+apps/dist/
 .env
 .env.*
 !.env.example
@@ -13,3 +14,4 @@ data/
 *.db-shm
 *.db-wal
 media/
+package-lock.json

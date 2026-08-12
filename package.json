@@ -11,7 +11,7 @@
     "dev": "\"$npm_execpath\" --parallel --filter @short-maker/web --filter @short-maker/server dev",
     "build": "\"$npm_execpath\" --recursive --if-present run build",
     "lint": "eslint .",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run --passWithNoTests --exclude '**/dist/**'",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
@@ -21,7 +21,7 @@
     "eslint": "^10.8.1",
     "globals": "^17.9.0",
     "prettier": "^3.9.6",
-    "typescript": "^6.0.3",
+    "typescript": "^5.9.3",
     "typescript-eslint": "^8.67.0",
     "vitest": "^4.1.10"
   }

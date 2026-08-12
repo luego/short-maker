@@ -58,12 +58,12 @@ ppm i drizzle-orm@rc @libsql/client dotenv
 - [x] Configure Drizzle
 - [x] Create SQLite database
 - [x] Add projects schema
-- [ ] Add render jobs schema
-- [ ] Add migrations
-- [ ] Add project repository
-- [ ] Add render job repository
-- [ ] Add Express error middleware
-- [ ] Add Zod API schemas
+- [x] Add render jobs schema
+- [x] Add migrations
+- [x] Add project repository
+- [x] Add render job repository
+- [x] Add Express error middleware
+- [x] Add Zod API schemas
 
 Endpoints:
 
@@ -82,13 +82,13 @@ GET    /api/renders/:id
 
 # Phase 3 — Source video
 
-- [ ] Select/import video
-- [ ] Store local source reference
-- [ ] Validate supported extensions
-- [ ] Run ffprobe
-- [ ] Save duration
-- [ ] Save width/height/fps metadata
-- [ ] Display source preview
+- [x] Select/import video
+- [x] Store local source reference
+- [x] Validate supported extensions
+- [x] Run ffprobe
+- [x] Save duration
+- [x] Save width/height/fps metadata
+- [x] Display source preview
 
 Preferred initial formats:
 
