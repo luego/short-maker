@@ -1,10 +1,7 @@
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-const serverSourceDirectory = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "..",
-);
+// import.meta.dirname reemplaza a path.dirname(fileURLToPath(import.meta.url))
+const projectRoot = path.resolve(import.meta.dirname, "../..");
+const mediaRoot = path.join(projectRoot, "media");
 
-export const projectRoot = path.resolve(serverSourceDirectory, "../../../..");
-export const mediaRoot = path.join(projectRoot, "media");
+export { projectRoot, mediaRoot };
