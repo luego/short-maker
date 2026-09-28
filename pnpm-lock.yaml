@@ -84,6 +84,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@short-maker/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       lucide-react:
         specifier: ^1.31.0
         version: 1.31.0(react@18.3.1)

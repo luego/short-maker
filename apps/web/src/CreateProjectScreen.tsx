@@ -1,3 +1,4 @@
+import { parseTimestampToSeconds } from "@short-maker/shared";
 import { useEffect, useState } from "react";
 import RenderStatus from "./components/RenderStatus";
 import TemplateSelect from "./components/TemplateSelect";
@@ -25,7 +26,9 @@ export default function CreateProjectScreen() {
   const [voice, setVoice] = useState("default-voice");
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [timestampError, setTimestampError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
+  const [submittingRender, setSubmittingRender] = useState(false);
 
   useEffect(() => {
     if (!video) {
@@ -39,7 +42,12 @@ export default function CreateProjectScreen() {
 
   const templates = ["roblox-rant"];
   const voices = ["default-voice"];
-  const canGenerate = Boolean(project?.sourceFilename && script.trim());
+  const canGenerate = Boolean(
+    project?.sourceFilename &&
+    script.trim() &&
+    timestamp.trim() &&
+    !submittingRender,
+  );
 
   const importVideo = async () => {
     if (!video) return;
@@ -88,6 +96,64 @@ export default function CreateProjectScreen() {
     }
   };
 
+  const submitRender = async () => {
+    setError(null);
+    setTimestampError(null);
+
+    if (!project?.id || !project.sourceFilename) {
+      setError("Import a source video before generating a Short.");
+      return;
+    }
+
+    if (!script.trim()) {
+      setError("Enter a script before generating a Short.");
+      return;
+    }
+
+    let startSeconds: number;
+    try {
+      startSeconds = parseTimestampToSeconds(timestamp);
+    } catch (caught) {
+      setTimestampError(
+        caught instanceof Error ? caught.message : "Enter a valid start time.",
+      );
+      return;
+    }
+
+    setSubmittingRender(true);
+    setStatus(null);
+    try {
+      const response = await fetch("/api/renders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: project.id,
+          script: script.trim(),
+          startSeconds,
+          voiceId: voice,
+          templateId: template,
+        }),
+      });
+      const body = (await response.json()) as {
+        id?: string;
+        status?: string;
+        error?: { message?: string };
+      };
+      if (!response.ok) {
+        throw new Error(body.error?.message ?? "Unable to create render job.");
+      }
+      setStatus(`Render job ${body.id} queued.`);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to create render job.",
+      );
+    } finally {
+      setSubmittingRender(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-2xl">
       <h2 className="mb-4 text-xl font-semibold">Create New Project</h2>
@@ -124,7 +190,14 @@ export default function CreateProjectScreen() {
         </p>
       )}
 
-      <TimestampInput value={timestamp} onChange={setTimestamp} />
+      <TimestampInput
+        value={timestamp}
+        error={timestampError}
+        onChange={(value) => {
+          setTimestamp(value);
+          setTimestampError(null);
+        }}
+      />
       <TemplateSelect
         templates={templates}
         selected={template}
@@ -148,11 +221,12 @@ export default function CreateProjectScreen() {
       </div>
 
       <button
+        type="button"
         disabled={!canGenerate}
-        onClick={() => setStatus("Rendering is implemented in Phase 5.")}
+        onClick={submitRender}
         className="rounded bg-blue-600 px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:bg-gray-400"
       >
-        Generate Short
+        {submittingRender ? "Queuing render…" : "Generate Short"}
       </button>
 
       {status && <RenderStatus status={status} />}
