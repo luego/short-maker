@@ -1,7 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { parseProbeOutput, ProbeService } from "./probe.service.js";
+import {
+  parseDuration,
+  parseProbeOutput,
+  ProbeService,
+} from "./probe.service.js";
 
 describe("probe service", () => {
+  it("extracts audio or video duration", () => {
+    expect(parseDuration({ format: { duration: "3.75" } })).toBe(3.75);
+  });
+
+  it("rejects missing or invalid duration", () => {
+    expect(() => parseDuration({ format: { duration: "0" } })).toThrow(
+      "ffprobe returned incomplete duration metadata.",
+    );
+    expect(() => parseDuration({})).toThrow(
+      "ffprobe returned incomplete duration metadata.",
+    );
+  });
+
   it("extracts duration and video dimensions", () => {
     expect(
       parseProbeOutput({
@@ -45,5 +62,22 @@ describe("probe service", () => {
 
     expect(calls[0]?.command).toBe("ffprobe");
     expect(calls[0]?.args.at(-1)).toBe("/tmp/video;rm -rf safe.mp4");
+  });
+
+  it("probes duration without requiring a video stream", async () => {
+    const calls: Array<{ command: string; args: string[] }> = [];
+    const service = new ProbeService("ffprobe", async (command, args) => {
+      calls.push({ command, args });
+      return JSON.stringify({ format: { duration: "2.5" } });
+    });
+
+    await expect(service.probeDuration("/tmp/narration.wav")).resolves.toBe(
+      2.5,
+    );
+
+    expect(calls[0]?.command).toBe("ffprobe");
+    expect(calls[0]?.args).toContain("-show_format");
+    expect(calls[0]?.args).not.toContain("-show_streams");
+    expect(calls[0]?.args.at(-1)).toBe("/tmp/narration.wav");
   });
 });

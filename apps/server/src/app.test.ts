@@ -47,6 +47,7 @@ beforeEach(async () => {
       project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
       script TEXT NOT NULL,
       start_seconds REAL NOT NULL,
+      narration_audio_path TEXT,
       narration_duration REAL,
       voice_id TEXT NOT NULL,
       template_id TEXT NOT NULL,

@@ -30,6 +30,7 @@ export const renderJobs = sqliteTable("render_jobs", {
     .references(() => projects.id, { onDelete: "cascade" }),
   script: text("script").notNull(),
   startSeconds: real("start_seconds").notNull(),
+  narrationAudioPath: text("narration_audio_path"),
   narrationDuration: real("narration_duration"),
   voiceId: text("voice_id").notNull(),
   templateId: text("template_id").notNull(),

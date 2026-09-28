@@ -3,10 +3,12 @@ import { Router } from "express";
 import { ApiError } from "../lib/api-error.js";
 import type { ProjectRepository } from "../repositories/project.repository.js";
 import type { RenderJobRepository } from "../repositories/render-job.repository.js";
+import type { RenderPreparationService } from "../services/render-preparation.service.js";
 
 export function createRendersRouter(
   projects: ProjectRepository,
   renderJobs: RenderJobRepository,
+  preparation?: Pick<RenderPreparationService, "prepareNarration">,
 ) {
   const router = Router();
 
@@ -16,6 +18,18 @@ export function createRendersRouter(
       throw new ApiError(404, "PROJECT_NOT_FOUND", "Project not found.");
     }
     response.status(201).json(await renderJobs.create(input));
+  });
+
+  router.post("/:id/prepare-narration", async (request, response) => {
+    if (!preparation) {
+      throw new ApiError(
+        503,
+        "NARRATION_PREP_UNAVAILABLE",
+        "Narration preparation is not configured.",
+      );
+    }
+    const id = projectIdSchema.parse(request.params.id);
+    response.json(await preparation.prepareNarration(id));
   });
 
   router.get("/:id", async (request, response) => {

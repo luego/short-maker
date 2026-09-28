@@ -20,9 +20,17 @@ export interface VideoMetadata {
   fps: number;
 }
 
+export function parseDuration(output: ProbeOutput): number {
+  const duration = Number(output.format?.duration);
+  if (!Number.isFinite(duration) || duration <= 0) {
+    throw new Error("ffprobe returned incomplete duration metadata.");
+  }
+  return duration;
+}
+
 export function parseProbeOutput(output: ProbeOutput): VideoMetadata {
   const video = output.streams?.find((stream) => stream.codec_type === "video");
-  const duration = Number(output.format?.duration);
+  const duration = parseDuration(output);
   const [numerator, denominator] = (video?.avg_frame_rate ?? "0/1")
     .split("/")
     .map(Number);
@@ -58,15 +66,26 @@ export class ProbeService {
   ) {}
 
   async probe(filePath: string) {
-    const output = await this.runner(this.executable, [
+    const output = await this.runProbe(filePath, [
+      "-show_format",
+      "-show_streams",
+    ]);
+    return parseProbeOutput(JSON.parse(output) as ProbeOutput);
+  }
+
+  async probeDuration(filePath: string) {
+    const output = await this.runProbe(filePath, ["-show_format"]);
+    return parseDuration(JSON.parse(output) as ProbeOutput);
+  }
+
+  private runProbe(filePath: string, args: string[]) {
+    return this.runner(this.executable, [
       "-v",
       "error",
       "-print_format",
       "json",
-      "-show_format",
-      "-show_streams",
+      ...args,
       filePath,
     ]);
-    return parseProbeOutput(JSON.parse(output) as ProbeOutput);
   }
 }

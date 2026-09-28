@@ -1,0 +1,1 @@
+ALTER TABLE `render_jobs` ADD `narration_audio_path` text;
