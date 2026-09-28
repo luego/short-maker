@@ -1,36 +1,94 @@
-import { useState } from "react";
 import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+
+type ProjectListItem = {
+  id: string;
+  name: string;
+  sourceFilename?: string | null;
+};
 
 export default function Sidebar({
-  onSelect,
+  selectedProjectId,
+  refreshKey,
+  onSelectNew,
+  onSelectProject,
 }: {
-  onSelect: (id: number) => void;
+  selectedProjectId: string | null;
+  refreshKey: number;
+  onSelectNew: () => void;
+  onSelectProject: (id: string) => void;
 }) {
-  const [projects] = useState([1, 2]); // Mock data for now
+  const [projects, setProjects] = useState<ProjectListItem[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadProjects = async () => {
+      setError(null);
+      try {
+        const response = await fetch("/api/projects");
+        if (!response.ok) throw new Error("Unable to load projects.");
+        const body = (await response.json()) as ProjectListItem[];
+        if (!ignore) setProjects(body);
+      } catch (caught) {
+        if (!ignore) {
+          setError(
+            caught instanceof Error
+              ? caught.message
+              : "Unable to load projects.",
+          );
+        }
+      }
+    };
+
+    void loadProjects();
+    return () => {
+      ignore = true;
+    };
+  }, [refreshKey]);
 
   return (
-    <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex-shrink-0">
+    <aside className="w-64 flex-shrink-0 border-r border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
       <div className="p-4">
         <button
-          onClick={() => onSelect(-1)}
-          className="flex items-center w-full text-left py-2 px-3 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+          type="button"
+          onClick={onSelectNew}
+          className="flex w-full items-center rounded px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
         >
           <Plus className="mr-2" size={16} />
           New Project
         </button>
       </div>
-      <ul className="p-4 mt-1">
-        {projects.map((p) => (
-          <li key={p}>
+      <div className="px-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
+        Projects
+      </div>
+      {error && <p className="px-4 py-2 text-sm text-red-600">{error}</p>}
+      <ul className="mt-1 p-4 pt-2">
+        {projects.length === 0 && !error ? (
+          <li className="px-3 py-2 text-sm text-gray-500">No projects yet.</li>
+        ) : null}
+        {projects.map((project) => (
+          <li key={project.id}>
             <button
-              onClick={() => onSelect(p)}
-              className={`w-full text-left py-2 px-3 rounded hover:bg-gray-100 dark:hover:bg-gray-700 ${p === 1 ? "font-bold" : ""}`}
+              type="button"
+              onClick={() => onSelectProject(project.id)}
+              className={`w-full rounded px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                project.id === selectedProjectId
+                  ? "bg-gray-100 font-semibold"
+                  : ""
+              }`}
             >
-              Project #{p}
+              <span className="block truncate">{project.name}</span>
+              {project.sourceFilename ? (
+                <span className="block truncate text-xs font-normal text-gray-500">
+                  {project.sourceFilename}
+                </span>
+              ) : null}
             </button>
           </li>
         ))}
       </ul>
-    </div>
+    </aside>
   );
 }

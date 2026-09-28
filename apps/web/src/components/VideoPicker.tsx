@@ -20,7 +20,11 @@ export default function VideoPicker({
       </label>
       <label
         htmlFor="source-video"
-        className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-gray-300 bg-gray-50 px-4 py-5 text-sm text-gray-600 hover:border-blue-500"
+        className={`flex items-center justify-center gap-2 rounded-md border border-dashed border-gray-300 bg-gray-50 px-4 py-5 text-sm text-gray-600 ${
+          disabled
+            ? "cursor-not-allowed opacity-60"
+            : "cursor-pointer hover:border-blue-500"
+        }`}
       >
         <Upload size={18} />
         {file ? file.name : "Choose an MP4, MOV, or MKV video"}

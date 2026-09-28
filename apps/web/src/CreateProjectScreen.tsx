@@ -8,6 +8,8 @@ import VoiceSelect from "./components/VoiceSelect";
 
 type Project = {
   id: string;
+  name: string;
+  templateId: string;
   sourceFilename?: string | null;
   sourceDuration?: number | null;
   sourceWidth?: number | null;
@@ -16,10 +18,19 @@ type Project = {
   sourceUrl?: string;
 };
 
-export default function CreateProjectScreen() {
+interface CreateProjectScreenProps {
+  projectId?: string;
+  onProjectSaved?: (project: Project) => void;
+}
+
+export default function CreateProjectScreen({
+  projectId,
+  onProjectSaved,
+}: CreateProjectScreenProps) {
   const [video, setVideo] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [project, setProject] = useState<Project | null>(null);
+  const [projectName, setProjectName] = useState("");
   const [script, setScript] = useState("");
   const [timestamp, setTimestamp] = useState("");
   const [template, setTemplate] = useState("roblox-rant");
@@ -27,14 +38,70 @@ export default function CreateProjectScreen() {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [timestampError, setTimestampError] = useState<string | null>(null);
+  const [loadingProject, setLoadingProject] = useState(false);
+  const [savingProject, setSavingProject] = useState(false);
   const [importing, setImporting] = useState(false);
   const [submittingRender, setSubmittingRender] = useState(false);
 
   useEffect(() => {
-    if (!video) {
+    if (!projectId) {
+      setProject(null);
+      setProjectName("");
+      setTemplate("roblox-rant");
+      setVideo(null);
       setPreviewUrl(null);
+      setStatus(null);
+      setError(null);
       return;
     }
+
+    let ignore = false;
+    const loadProject = async () => {
+      setLoadingProject(true);
+      setError(null);
+      setVideo(null);
+      try {
+        const response = await fetch(`/api/projects/${projectId}`);
+        const body = (await response.json()) as Project & {
+          error?: { message?: string };
+        };
+        if (!response.ok) {
+          throw new Error(body.error?.message ?? "Unable to load project.");
+        }
+        if (!ignore) {
+          const loaded = {
+            ...body,
+            sourceUrl: body.sourceFilename
+              ? `/api/projects/${body.id}/source-video`
+              : undefined,
+          };
+          setProject(loaded);
+          setProjectName(loaded.name);
+          setTemplate(loaded.templateId);
+          setPreviewUrl(loaded.sourceUrl ?? null);
+          setStatus(null);
+        }
+      } catch (caught) {
+        if (!ignore) {
+          setError(
+            caught instanceof Error
+              ? caught.message
+              : "Unable to load project.",
+          );
+        }
+      } finally {
+        if (!ignore) setLoadingProject(false);
+      }
+    };
+
+    void loadProject();
+    return () => {
+      ignore = true;
+    };
+  }, [projectId]);
+
+  useEffect(() => {
+    if (!video) return;
     const url = URL.createObjectURL(video);
     setPreviewUrl(url);
     return () => URL.revokeObjectURL(url);
@@ -49,26 +116,73 @@ export default function CreateProjectScreen() {
     !submittingRender,
   );
 
+  const saveProject = async () => {
+    if (!projectName.trim()) {
+      setError("Enter a project name before uploading a video.");
+      return;
+    }
+
+    setSavingProject(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        project ? `/api/projects/${project.id}` : "/api/projects",
+        {
+          method: project ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: projectName.trim(),
+            templateId: template,
+          }),
+        },
+      );
+      const body = (await response.json()) as Project & {
+        error?: { message?: string };
+      };
+      if (!response.ok) {
+        throw new Error(body.error?.message ?? "Unable to save the project.");
+      }
+      const saved = {
+        ...body,
+        sourceUrl: body.sourceFilename
+          ? `/api/projects/${body.id}/source-video`
+          : undefined,
+      };
+      setProject(saved);
+      setProjectName(saved.name);
+      setTemplate(saved.templateId);
+      setPreviewUrl(saved.sourceUrl ?? previewUrl);
+      setStatus(
+        project
+          ? "Project updated."
+          : "Project created. Now upload a source video.",
+      );
+      onProjectSaved?.(saved);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to save the project.",
+      );
+    } finally {
+      setSavingProject(false);
+    }
+  };
+
   const importVideo = async () => {
     if (!video) return;
+    if (!project) {
+      setError("Create or choose a project before uploading a video.");
+      return;
+    }
+
     setImporting(true);
     setError(null);
     try {
-      const createdResponse = await fetch("/api/projects", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: video.name.replace(/\.[^.]+$/, ""),
-          templateId: template,
-        }),
-      });
-      if (!createdResponse.ok) throw new Error("Unable to create the project.");
-      const created = (await createdResponse.json()) as Project;
-
       const formData = new FormData();
       formData.append("video", video);
       const sourceResponse = await fetch(
-        `/api/projects/${created.id}/source-video`,
+        `/api/projects/${project.id}/source-video`,
         {
           method: "POST",
           body: formData,
@@ -82,9 +196,14 @@ export default function CreateProjectScreen() {
           sourceBody.error?.message ?? "Unable to import the video.",
         );
       }
-      setProject(sourceBody);
-      setPreviewUrl(sourceBody.sourceUrl ?? null);
+      const updated = {
+        ...sourceBody,
+        sourceUrl: `/api/projects/${project.id}/source-video`,
+      };
+      setProject(updated);
+      setPreviewUrl(updated.sourceUrl);
       setStatus("Source video ready.");
+      onProjectSaved?.(updated);
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -156,26 +275,70 @@ export default function CreateProjectScreen() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h2 className="mb-4 text-xl font-semibold">Create New Project</h2>
+      <h2 className="mb-4 text-xl font-semibold">
+        {project ? `Project: ${project.name}` : "Create New Project"}
+      </h2>
+
+      {loadingProject ? (
+        <p className="mb-4 text-sm text-gray-600">Loading project…</p>
+      ) : null}
+
+      <div className="mb-5 rounded-md border bg-white p-4">
+        <label
+          className="mb-1 block text-sm font-medium"
+          htmlFor="project-name"
+        >
+          Project name
+        </label>
+        <input
+          id="project-name"
+          className="mb-3 w-full rounded border p-2"
+          value={projectName}
+          onChange={(event) => setProjectName(event.target.value)}
+          placeholder="Roblox Rant #1"
+        />
+        <TemplateSelect
+          templates={templates}
+          selected={template}
+          onChange={setTemplate}
+        />
+        <button
+          type="button"
+          disabled={savingProject || !projectName.trim()}
+          onClick={saveProject}
+          className="rounded bg-blue-600 px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:bg-gray-400"
+        >
+          {savingProject
+            ? "Saving…"
+            : project
+              ? "Save project"
+              : "Create project"}
+        </button>
+        {!project ? (
+          <p className="mt-2 text-sm text-gray-500">
+            Primero crea o elige un proyecto. Después podrás subir el video a
+            ese proyecto.
+          </p>
+        ) : null}
+      </div>
 
       <VideoPicker
         file={video}
         previewUrl={previewUrl}
-        disabled={importing}
+        disabled={importing || !project}
         onFileSelected={(file) => {
           setVideo(file);
-          setProject(null);
           setStatus(null);
           setError(null);
         }}
       />
       <button
         type="button"
-        disabled={!video || importing}
+        disabled={!video || importing || !project}
         onClick={importVideo}
         className="mb-2 rounded bg-blue-600 px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:bg-gray-400"
       >
-        {importing ? "Importing and analyzing…" : "Import source video"}
+        {importing ? "Importing and analyzing…" : "Upload source video"}
       </button>
       {project?.sourceFilename && (
         <p className="mb-4 text-sm text-gray-600">
@@ -197,11 +360,6 @@ export default function CreateProjectScreen() {
           setTimestamp(value);
           setTimestampError(null);
         }}
-      />
-      <TemplateSelect
-        templates={templates}
-        selected={template}
-        onChange={setTemplate}
       />
       <VoiceSelect voices={voices} selected={voice} onChange={setVoice} />
 
