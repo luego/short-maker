@@ -4,11 +4,13 @@ import { ApiError } from "../lib/api-error.js";
 import type { ProjectRepository } from "../repositories/project.repository.js";
 import type { RenderJobRepository } from "../repositories/render-job.repository.js";
 import type { RenderPreparationService } from "../services/render-preparation.service.js";
+import type { RenderService } from "../services/render.service.js";
 
 export function createRendersRouter(
   projects: ProjectRepository,
   renderJobs: RenderJobRepository,
   preparation?: Pick<RenderPreparationService, "prepareNarration">,
+  renderer?: Pick<RenderService, "render">,
 ) {
   const router = Router();
 
@@ -30,6 +32,18 @@ export function createRendersRouter(
     }
     const id = projectIdSchema.parse(request.params.id);
     response.json(await preparation.prepareNarration(id));
+  });
+
+  router.post("/:id/render", async (request, response) => {
+    if (!renderer) {
+      throw new ApiError(
+        503,
+        "RENDER_UNAVAILABLE",
+        "Video rendering is not configured.",
+      );
+    }
+    const id = projectIdSchema.parse(request.params.id);
+    response.json(await renderer.render(id));
   });
 
   router.get("/:id", async (request, response) => {

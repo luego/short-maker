@@ -13,6 +13,10 @@ export interface RenderJobFailure {
   errorMessage: string;
 }
 
+export interface RenderOutput {
+  outputPath: string;
+}
+
 export class RenderJobRepository {
   constructor(private readonly database: typeof applicationDatabase) {}
 
@@ -50,6 +54,21 @@ export class RenderJobRepository {
         narrationDuration: metadata.narrationDuration,
         status: "analyzing_audio",
         progress: 25,
+        errorCode: null,
+        errorMessage: null,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(renderJobs.id, id));
+    return this.findById(id);
+  }
+
+  async setOutput(id: string, output: RenderOutput) {
+    await this.database
+      .update(renderJobs)
+      .set({
+        outputPath: output.outputPath,
+        status: "completed",
+        progress: 100,
         errorCode: null,
         errorMessage: null,
         updatedAt: new Date().toISOString(),

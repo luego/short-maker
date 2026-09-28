@@ -6,12 +6,14 @@ import { createProjectsRouter } from "./routes/projects.routes.js";
 import { createRendersRouter } from "./routes/renders.routes.js";
 import type { MediaService } from "./services/media.service.js";
 import type { RenderPreparationService } from "./services/render-preparation.service.js";
+import type { RenderService } from "./services/render.service.js";
 
 export interface AppDependencies {
   projects: ProjectRepository;
   renderJobs: RenderJobRepository;
   media: Pick<MediaService, "importSource">;
   preparation?: Pick<RenderPreparationService, "prepareNarration">;
+  renderer?: Pick<RenderService, "render">;
 }
 
 export function createApp(dependencies: AppDependencies) {
@@ -27,6 +29,7 @@ export function createApp(dependencies: AppDependencies) {
       dependencies.projects,
       dependencies.renderJobs,
       dependencies.preparation,
+      dependencies.renderer,
     ),
   );
   app.use(errorMiddleware);
