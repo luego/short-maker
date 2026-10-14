@@ -2,11 +2,10 @@
 
 This is a lightweight implementation plan.
 
-Implemented service items below describe code covered by automated tests, not a
-verified end-to-end render with local binaries. The UI currently creates a job
-only. Next: connect narration and rendering through a single-worker queue, then
-add polling and output preview. audio.cpp CLI arguments and voice configuration
-still need verification against the executable installed on the user's machine.
+The UI submits renders to a single-worker queue, polls persisted progress, and
+shows preview/download when a job completes. Interrupted jobs fail on startup
+with a retry message. Automated tests cover the queue and API; a real full render
+still needs verified audio.cpp CLI arguments, voice configuration, and captions.
 
 Do not create detailed specs for every task.
 
@@ -133,7 +132,7 @@ Do not ship fake TTS as finished functionality.
 - [x] Reduce gameplay audio volume
 - [x] Export H.264/AAC MP4
 - [x] Store result
-- [ ] Preview result in UI
+- [x] Preview result in UI
 
 Initial output:
 
@@ -161,12 +160,12 @@ Do not create a visual caption editor.
 
 # Phase 7 — Render queue
 
-- [ ] Create in-process render queue
+- [x] Create in-process render queue
 - [x] Persist job status
-- [ ] Add status polling
-- [ ] Show stage in UI
-- [ ] Handle failures
-- [ ] Prevent accidental duplicate submissions
+- [x] Add status polling
+- [x] Show stage in UI
+- [x] Handle failures
+- [x] Prevent accidental duplicate submissions
 
 One concurrent render is acceptable initially.
 
@@ -179,7 +178,7 @@ One concurrent render is acceptable initially.
 - [ ] Error states
 - [ ] Delete render
 - [ ] Delete project
-- [ ] Open/export rendered file
+- [x] Open/export rendered file
 - [ ] Validate Windows paths
 - [ ] Basic setup documentation
 

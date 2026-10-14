@@ -37,9 +37,10 @@ export default function AppShell() {
       <main className="flex-1 overflow-y-auto bg-gray-50 p-4 dark:bg-gray-900">
         <h1 className="mb-4 text-2xl font-bold">Short Maker</h1>
         {isCreating ? (
-          <CreateProjectScreen onProjectSaved={handleProjectSaved} />
+          <CreateProjectScreen key="new" onProjectSaved={handleProjectSaved} />
         ) : selectedProjectId ? (
           <CreateProjectScreen
+            key={selectedProjectId}
             projectId={selectedProjectId}
             onProjectSaved={handleProjectSaved}
           />

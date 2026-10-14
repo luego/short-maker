@@ -1,4 +1,13 @@
 // Shared HTTP handling for the local API. Uploads keep their browser-generated headers.
+export class ApiRequestError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
 export async function apiRequest<T>(
   url: string,
   fallbackMessage: string,
@@ -7,7 +16,10 @@ export async function apiRequest<T>(
   const response = await fetch(url, options);
   const body = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(body?.error?.message ?? fallbackMessage);
+    throw new ApiRequestError(
+      response.status,
+      body?.error?.message ?? fallbackMessage,
+    );
   }
   if (body === null) throw new Error(fallbackMessage);
   return body as T;

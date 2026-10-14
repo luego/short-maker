@@ -37,15 +37,18 @@ Existing capabilities:
 
 Main gaps:
 
-- `POST /api/renders` only creates a queued job; it does not enqueue processing.
-- No in-process render queue yet.
+- `POST /api/renders` creates a job and immediately enqueues background processing.
+- A single-worker in-process queue exists; interrupted jobs fail on startup.
 - FFmpeg render service exists; local binary execution remains to be verified.
 - Clip bounds validation and render orchestration exist with unit tests.
 - No captions service yet.
-- No final output route/preview/download API yet.
+- Output streaming, UI preview, and download are implemented.
 - Output path persistence exists in render orchestration.
-- No stale job recovery on server startup yet.
-- No UI polling beyond basic queued status message.
+- Stale non-terminal jobs are marked failed on startup.
+- UI polls job status and restores the last render per project after reload.
+
+The stages below retain the original design plan; the capability list above records
+the current implementation. Captions and real audio.cpp verification remain pending.
 
 ## Target pipeline
 

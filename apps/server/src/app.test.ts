@@ -1,16 +1,21 @@
 import { createClient } from "@libsql/client";
+import { mkdir, writeFile, rm, rmdir } from "node:fs/promises";
+import path from "node:path";
 import { drizzle } from "drizzle-orm/libsql";
 import request from "supertest";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "./app.js";
 import * as schema from "./db/schema.js";
 import { ProjectRepository } from "./repositories/project.repository.js";
 import { RenderJobRepository } from "./repositories/render-job.repository.js";
+import { mediaRoot, projectRoot } from "./lib/paths.js";
 
 const sourceVideo = Buffer.from("fake-video");
 const client = createClient({ url: ":memory:" });
 const database = drizzle({ client, schema });
+const enqueue = vi.fn();
 const app = createApp({
+  queue: { enqueue },
   projects: new ProjectRepository(database),
   renderJobs: new RenderJobRepository(database),
   media: {
@@ -26,6 +31,7 @@ const app = createApp({
 });
 
 beforeEach(async () => {
+  enqueue.mockClear();
   await client.executeMultiple(`
     DROP TABLE IF EXISTS render_jobs;
     DROP TABLE IF EXISTS projects;
@@ -166,12 +172,16 @@ describe("renders API", () => {
       .send({ name: "Render project" })
       .expect(201);
 
+    await request(app)
+      .post(`/api/projects/${project.body.id}/source-video`)
+      .attach("video", sourceVideo, "source.mp4")
+      .expect(200);
     const created = await request(app)
       .post("/api/renders")
       .send({
         projectId: project.body.id,
         script: "This is the narration.",
-        startSeconds: 12.5,
+        startSeconds: 0,
         voiceId: "default",
         templateId: "roblox-rant",
       })
@@ -183,9 +193,114 @@ describe("renders API", () => {
       progress: 0,
     });
 
+    expect(enqueue).toHaveBeenCalledWith(created.body.id);
+    expect(created.body.outputPath).toBeUndefined();
+    expect(created.body.narrationAudioPath).toBeUndefined();
     const fetched = await request(app)
       .get(`/api/renders/${created.body.id}`)
       .expect(200);
     expect(fetched.body).toEqual(created.body);
   });
+});
+
+it("rejects render creation without a source and does not enqueue it", async () => {
+  const project = await request(app)
+    .post("/api/projects")
+    .send({ name: "No source" });
+  const result = await request(app)
+    .post("/api/renders")
+    .send({
+      projectId: project.body.id,
+      script: "Narration",
+      startSeconds: 0,
+      voiceId: "default",
+      templateId: "roblox-rant",
+    })
+    .expect(400);
+  expect(result.body.error.code).toBe("SOURCE_VIDEO_REQUIRED");
+  expect(enqueue).not.toHaveBeenCalled();
+});
+
+it("fails interrupted jobs on startup while preserving completed jobs", async () => {
+  const projects = new ProjectRepository(database);
+  const jobs = new RenderJobRepository(database);
+  const project = await projects.create({
+    name: "Recovery",
+    templateId: "roblox-rant",
+  });
+  const input = {
+    projectId: project!.id,
+    script: "Narration",
+    startSeconds: 0,
+    voiceId: "default",
+    templateId: "roblox-rant",
+  };
+  const pending = await jobs.create(input);
+  const completed = await jobs.create(input);
+  await jobs.setOutput(completed!.id, {
+    outputPath: "media/renders/result.mp4",
+  });
+  await jobs.failInterrupted();
+  expect(await jobs.findById(pending!.id)).toMatchObject({
+    status: "failed",
+    errorCode: "RENDER_INTERRUPTED",
+  });
+  expect(await jobs.findById(completed!.id)).toMatchObject({
+    status: "completed",
+  });
+});
+
+it("rejects output paths outside the render directory", async () => {
+  const projects = new ProjectRepository(database);
+  const jobs = new RenderJobRepository(database);
+  const project = await projects.create({
+    name: "Output",
+    templateId: "roblox-rant",
+  });
+  const job = await jobs.create({
+    projectId: project!.id,
+    script: "Narration",
+    startSeconds: 0,
+    voiceId: "default",
+    templateId: "roblox-rant",
+  });
+  await jobs.setOutput(job!.id, { outputPath: "../../package.json" });
+  const response = await request(app)
+    .get(`/api/renders/${job!.id}/output`)
+    .expect(400);
+  expect(response.body.error.code).toBe("INVALID_MEDIA_PATH");
+});
+
+it("serves a completed output with byte ranges for browser playback", async () => {
+  const projects = new ProjectRepository(database);
+  const jobs = new RenderJobRepository(database);
+  const project = await projects.create({
+    name: "Playback",
+    templateId: "roblox-rant",
+  });
+  const job = await jobs.create({
+    projectId: project!.id,
+    script: "Narration",
+    startSeconds: 0,
+    voiceId: "default",
+    templateId: "roblox-rant",
+  });
+  const directory = path.join(mediaRoot, "renders", project!.id);
+  const output = path.join(directory, `${job!.id}.mp4`);
+  await mkdir(directory, { recursive: true });
+  await writeFile(output, Buffer.from("0123456789"));
+  try {
+    await jobs.setOutput(job!.id, {
+      outputPath: path.relative(projectRoot, output),
+    });
+    const response = await request(app)
+      .get(`/api/renders/${job!.id}/output`)
+      .set("Range", "bytes=0-3")
+      .expect(206);
+    expect(response.headers["content-range"]).toBe("bytes 0-3/10");
+    expect(response.body.toString()).toBe("0123");
+  } finally {
+    await rm(output, { force: true });
+    await rmdir(directory);
+  }
 });

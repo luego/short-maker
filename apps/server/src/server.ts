@@ -1,3 +1,4 @@
+import { RenderQueue } from "./jobs/render.queue.js";
 import { createApp } from "./app.js";
 import { database } from "./db/client.js";
 import { ProjectRepository } from "./repositories/project.repository.js";
@@ -19,17 +20,18 @@ const preparation = new RenderPreparationService(
   new AudioCppService(),
   probe,
 );
+const renderer = new RenderService(
+  projects,
+  renderJobs,
+  preparation,
+  new FfmpegService(),
+);
+await renderJobs.failInterrupted();
 const app = createApp({
   projects,
   renderJobs,
   media: new MediaService(probe),
-  preparation,
-  renderer: new RenderService(
-    projects,
-    renderJobs,
-    preparation,
-    new FfmpegService(),
-  ),
+  queue: new RenderQueue(renderer, renderJobs),
 });
 
 app.listen(port, () => {

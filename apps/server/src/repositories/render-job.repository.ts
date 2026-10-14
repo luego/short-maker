@@ -1,5 +1,5 @@
 import type { CreateRenderInput } from "@short-maker/shared";
-import { eq } from "drizzle-orm";
+import { eq, notInArray } from "drizzle-orm";
 import type { database as applicationDatabase } from "../db/client.js";
 import { renderJobs } from "../db/schema.js";
 
@@ -26,6 +26,19 @@ export class RenderJobRepository {
       .from(renderJobs)
       .where(eq(renderJobs.id, id));
     return job;
+  }
+
+  async failInterrupted() {
+    await this.database
+      .update(renderJobs)
+      .set({
+        status: "failed",
+        errorCode: "RENDER_INTERRUPTED",
+        errorMessage:
+          "The server stopped before this render finished. Generate it again.",
+        updatedAt: new Date().toISOString(),
+      })
+      .where(notInArray(renderJobs.status, ["completed", "failed"]));
   }
 
   async create(input: CreateRenderInput) {

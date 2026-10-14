@@ -2,6 +2,8 @@ import { parseTimestampToSeconds } from "@short-maker/shared";
 import { useState } from "react";
 import { apiRequest, type Project } from "./api";
 import { useProjectEditor } from "./useProjectEditor";
+import RenderProgress from "./components/RenderProgress";
+import { useRenderJob, type RenderJob } from "./useRenderJob";
 import RenderStatus from "./components/RenderStatus";
 import TemplateSelect from "./components/TemplateSelect";
 import TimestampInput from "./components/TimestampInput";
@@ -42,6 +44,10 @@ export default function CreateProjectScreen({
   const [timestampError, setTimestampError] = useState<string | null>(null);
   const [submittingRender, setSubmittingRender] = useState(false);
 
+  const { job, pollingError, rendering, trackRender } = useRenderJob(
+    project?.id,
+  );
+
   const templates = ["roblox-rant"];
   const voices = ["default-voice"];
   const canGenerate = Boolean(
@@ -49,6 +55,7 @@ export default function CreateProjectScreen({
     script.trim() &&
     timestamp.trim() &&
     !submittingRender &&
+    !rendering &&
     !loadingProject &&
     !savingProject &&
     !importing,
@@ -81,7 +88,7 @@ export default function CreateProjectScreen({
     setSubmittingRender(true);
     setStatus(null);
     try {
-      const body = await apiRequest<{ id: string; status: string }>(
+      const body = await apiRequest<RenderJob>(
         "/api/renders",
         "Unable to create render job.",
         {
@@ -96,7 +103,7 @@ export default function CreateProjectScreen({
           }),
         },
       );
-      setStatus(`Render job ${body.id} queued.`);
+      trackRender(body);
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -140,7 +147,11 @@ export default function CreateProjectScreen({
         <button
           type="button"
           disabled={
-            loadingProject || savingProject || importing || !projectName.trim()
+            loadingProject ||
+            rendering ||
+            savingProject ||
+            importing ||
+            !projectName.trim()
           }
           onClick={saveProject}
           className="rounded bg-blue-600 px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:bg-gray-400"
@@ -162,7 +173,9 @@ export default function CreateProjectScreen({
       <VideoPicker
         file={video}
         previewUrl={previewUrl}
-        disabled={loadingProject || savingProject || importing || !project}
+        disabled={
+          loadingProject || rendering || savingProject || importing || !project
+        }
         onFileSelected={(file) => {
           setVideo(file);
           setStatus(null);
@@ -172,7 +185,12 @@ export default function CreateProjectScreen({
       <button
         type="button"
         disabled={
-          loadingProject || savingProject || !video || importing || !project
+          loadingProject ||
+          rendering ||
+          savingProject ||
+          !video ||
+          importing ||
+          !project
         }
         onClick={importVideo}
         className="mb-2 rounded bg-blue-600 px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:bg-gray-400"
@@ -227,6 +245,9 @@ export default function CreateProjectScreen({
       </button>
 
       {status && <RenderStatus status={status} />}
+      {(job || rendering || pollingError) && (
+        <RenderProgress job={job} error={pollingError} />
+      )}
     </div>
   );
 }
