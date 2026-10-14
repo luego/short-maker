@@ -41,14 +41,14 @@ Main gaps:
 - A single-worker in-process queue exists; interrupted jobs fail on startup.
 - FFmpeg render service exists; local binary execution remains to be verified.
 - Clip bounds validation and render orchestration exist with unit tests.
-- No captions service yet.
+- Captions service uses whisper.cpp SRT timings and generates the Roblox Rant ASS preset. Real recognition remains pending executable/model configuration.
 - Output streaming, UI preview, and download are implemented.
 - Output path persistence exists in render orchestration.
 - Stale non-terminal jobs are marked failed on startup.
 - UI polls job status and restores the last render per project after reload.
 
 The stages below retain the original design plan; the capability list above records
-the current implementation. Captions and real audio.cpp verification remain pending.
+the current implementation. Real whisper.cpp recognition and audio.cpp verification remain pending.
 
 ## Target pipeline
 

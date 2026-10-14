@@ -1,3 +1,5 @@
+import { rm } from "node:fs/promises";
+import { CaptionsService, CaptionServiceError } from "./captions.service.js";
 import path from "node:path";
 import { ApiError } from "../lib/api-error.js";
 import { projectRoot } from "../lib/paths.js";
@@ -51,6 +53,7 @@ export class RenderService {
       prepareNarration(renderId: string): Promise<unknown>;
     },
     private readonly ffmpeg: Pick<FfmpegService, "renderVideo">,
+    private readonly captions: Pick<CaptionsService, "generate">,
   ) {}
 
   async render(renderId: string) {
@@ -65,6 +68,7 @@ export class RenderService {
       throw new ApiError(404, "PROJECT_NOT_FOUND", "Project not found.");
     }
 
+    let captionsPath: string | undefined;
     try {
       await this.preparation.prepareNarration(renderId);
       const renderJob = await this.renderJobs.findById(renderId);
@@ -93,6 +97,14 @@ export class RenderService {
         narrationDuration: renderJob.narrationDuration,
       });
 
+      await this.renderJobs.setStatus(renderId, "generating_captions", 50);
+      captionsPath = await this.captions.generate({
+        renderId,
+        narrationAudioPath: resolveProjectMediaPath(
+          renderJob.narrationAudioPath,
+        ),
+        narrationDuration: clip.clipDuration,
+      });
       await this.renderJobs.setStatus(renderId, "rendering", 70);
       const output = await this.ffmpeg.renderVideo({
         projectId: project.id,
@@ -101,6 +113,7 @@ export class RenderService {
         narrationAudioPath: resolveProjectMediaPath(
           renderJob.narrationAudioPath,
         ),
+        captionsPath,
         clipStart: clip.clipStart,
         clipDuration: clip.clipDuration,
       });
@@ -120,13 +133,23 @@ export class RenderService {
         throw new ApiError(400, error.code, error.message);
       }
 
-      if (error instanceof FfmpegServiceError) {
+      if (
+        error instanceof FfmpegServiceError ||
+        error instanceof CaptionServiceError
+      ) {
         await this.fail(renderId, error.code, error.message);
         throw new ApiError(500, error.code, error.message);
       }
 
       await this.fail(renderId, "RENDER_FAILED", "Unable to render the video.");
       throw new ApiError(500, "RENDER_FAILED", "Unable to render the video.");
+    } finally {
+      if (captionsPath)
+        await rm(captionsPath, { force: true }).catch(() => {
+          console.error(
+            JSON.stringify({ event: "captions.cleanup_failed", renderId }),
+          );
+        });
     }
   }
 

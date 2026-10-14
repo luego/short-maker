@@ -5,7 +5,9 @@ This is a lightweight implementation plan.
 The UI submits renders to a single-worker queue, polls persisted progress, and
 shows preview/download when a job completes. Interrupted jobs fail on startup
 with a retry message. Automated tests cover the queue and API; a real full render
-still needs verified audio.cpp CLI arguments, voice configuration, and captions.
+still needs verified audio.cpp CLI arguments, voice configuration, and a real
+Whisper model. Caption parsing, ASS generation, and FFmpeg burn-in are implemented;
+real speech recognition remains pending local executable/model setup.
 
 Do not create detailed specs for every task.
 
@@ -147,12 +149,12 @@ AAC
 
 # Phase 6 — Captions
 
-- [ ] Add caption generation interface
-- [ ] Add whisper.cpp integration if required
-- [ ] Obtain timings
-- [ ] Generate ASS file
-- [ ] Add one Roblox Rant caption preset
-- [ ] Burn captions into output video
+- [x] Add caption generation interface
+- [x] Add whisper.cpp integration if required
+- [x] Obtain timings
+- [x] Generate ASS file
+- [x] Add one Roblox Rant caption preset
+- [x] Burn captions into output video
 
 Do not create a visual caption editor.
 

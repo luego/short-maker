@@ -1,3 +1,4 @@
+import { CaptionsService } from "./services/captions.service.js";
 import { RenderQueue } from "./jobs/render.queue.js";
 import { createApp } from "./app.js";
 import { database } from "./db/client.js";
@@ -25,6 +26,7 @@ const renderer = new RenderService(
   renderJobs,
   preparation,
   new FfmpegService(),
+  new CaptionsService(),
 );
 await renderJobs.failInterrupted();
 const app = createApp({

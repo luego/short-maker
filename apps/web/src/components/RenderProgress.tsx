@@ -5,6 +5,7 @@ const stageLabels: Record<string, string> = {
   generating_audio: "Generating narration…",
   analyzing_audio: "Measuring narration…",
   preparing_video: "Preparing video…",
+  generating_captions: "Synchronizing captions�",
   rendering: "Rendering video…",
   completed: "Video ready",
   failed: "Render failed",

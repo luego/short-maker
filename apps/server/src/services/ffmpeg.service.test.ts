@@ -44,6 +44,7 @@ describe("FfmpegService", () => {
       renderId: "render-1",
       sourceVideoPath: "/media/source;rm -rf nope.mp4",
       narrationAudioPath: "/media/narration.wav",
+      captionsPath: "C:/captions/test.ass",
       clipStart: 2.5,
       clipDuration: 7,
     });
@@ -57,6 +58,7 @@ describe("FfmpegService", () => {
     expect(calls[0]?.args).toContain("aac");
     expect(calls[0]?.args.join(" ")).toContain("scale=1080:1920");
     expect(calls[0]?.args.join(" ")).toContain("volume=0.18");
+    expect(calls[0]?.args.join(" ")).toContain("ass=filename=");
     expect(result.absolutePath).toBe(
       path.join(rendersRoot, "project-1", "render-1.mp4"),
     );

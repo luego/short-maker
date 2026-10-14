@@ -72,10 +72,28 @@ failed after a server restart so they can be submitted again.
 Configure `FFMPEG_PATH`, `FFPROBE_PATH`, and `AUDIO_CPP_PATH` in the server's
 `.env`. FFmpeg defaults to `ffmpeg` on PATH. The audio.cpp adapter currently expects
 `--text-file`, `--voice`, and `--output`; verify these flags and voice IDs against
-your installed executable before considering TTS ready. Captions are not yet
-implemented. The previous synchronous preparation/render HTTP endpoints have
+your installed executable before considering TTS ready. Captions require a configured whisper.cpp executable and model. The previous synchronous preparation/render HTTP endpoints have
 been replaced by the queued workflow; services remain independently callable.
 
 Validation: the FFmpeg service has also produced a real 1080x1920, 30 fps MP4
 from generated video/audio test inputs. This checks media rendering, not TTS or
-caption generation. Full manual browser verification remains pending.
+speech recognition. Full manual browser verification remains pending.
+
+## Synchronized captions
+
+Set `WHISPER_CPP_PATH` to the absolute path of `whisper-cli.exe` and
+`WHISPER_MODEL_PATH` to a compatible multilingual Whisper model file. The server
+normalizes narration to 16 kHz mono WAV, requests SRT timestamps with automatic
+language detection, writes the Roblox Rant ASS preset, and burns it into the MP4.
+The CLI options follow the [official whisper.cpp CLI source](https://github.com/ggml-org/whisper.cpp/blob/master/examples/cli/cli.cpp).
+
+Missing executable/model configuration fails the job with `WHISPER_UNAVAILABLE`;
+there are no fabricated caption timings. `CAPTION_GENERATION_FAILED` means audio
+normalization, transcription, or subtitle output failed. Temporary WAV/SRT files
+are removed after transcription, and ASS is removed after rendering finishes or
+fails. Original source videos are preserved.
+
+The ASS burn-in was verified with real FFmpeg, including a Windows path with
+spaces, apostrophes, brackets, and commas. Speech recognition still needs a real
+Whisper executable/model and narration sample. audio.cpp also remains pending
+verification against the installed binary and voice IDs.

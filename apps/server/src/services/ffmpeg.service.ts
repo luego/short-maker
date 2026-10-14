@@ -27,6 +27,7 @@ export interface RenderVideoInput {
   fps?: number;
   sourceVolume?: number;
   narrationVolume?: number;
+  captionsPath?: string;
 }
 
 export interface RenderVideoResult {
@@ -52,6 +53,7 @@ type ArgsBuilderInput = Required<
   sourceVideoPath: string;
   narrationAudioPath: string;
   outputPath: string;
+  captionsPath?: string;
 };
 
 type ArgsBuilder = (input: ArgsBuilderInput) => string[];
@@ -69,11 +71,19 @@ async function defaultFileExists(filePath: string) {
   }
 }
 
+export function escapeFilterPath(value: string) {
+  const option = value.replace(/\\/g, "/").replace(/[':]/g, "\\$&");
+  return option.replace(/[\\'[\],;]/g, "\\$&");
+}
+
 function defaultArgsBuilder(input: ArgsBuilderInput) {
   const videoFilter = [
     `scale=${input.width}:${input.height}:force_original_aspect_ratio=increase`,
     `crop=${input.width}:${input.height}`,
     `fps=${input.fps}`,
+    ...(input.captionsPath
+      ? [`ass=filename=${escapeFilterPath(input.captionsPath)}`]
+      : []),
   ].join(",");
   const filterComplex = [
     `[0:v]${videoFilter}[v]`,
@@ -150,6 +160,7 @@ export class FfmpegService {
           fps,
           sourceVolume,
           narrationVolume,
+          captionsPath: input.captionsPath,
         }),
       );
 

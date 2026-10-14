@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { CaptionServiceError } from "./captions.service.js";
 import { ApiError } from "../lib/api-error.js";
 import { FfmpegServiceError } from "./ffmpeg.service.js";
 import { RenderService, resolveProjectMediaPath } from "./render.service.js";
@@ -25,6 +26,7 @@ function createHarness(options?: {
   job?: Partial<Job>;
   preparationError?: Error;
   ffmpegError?: Error;
+  captionError?: Error;
 }) {
   const project =
     options?.project === undefined
@@ -49,6 +51,7 @@ function createHarness(options?: {
     narrationAudioPath: string;
     clipStart: number;
     clipDuration: number;
+    captionsPath?: string;
   }> = [];
 
   const service = new RenderService(
@@ -93,11 +96,18 @@ function createHarness(options?: {
           narrationAudioPath: input.narrationAudioPath,
           clipStart: input.clipStart,
           clipDuration: input.clipDuration,
+          captionsPath: input.captionsPath,
         });
         return {
           absolutePath: "/abs/render.mp4",
           relativePath: "media/renders/project-1/render-1.mp4",
         };
+      },
+    },
+    {
+      generate: async () => {
+        if (options?.captionError) throw options.captionError;
+        return "media/temp/render-1-captions.ass";
       },
     },
   );
@@ -117,6 +127,7 @@ describe("RenderService", () => {
 
     expect(statuses).toEqual([
       { status: "preparing_video", progress: 35 },
+      { status: "generating_captions", progress: 50 },
       { status: "rendering", progress: 70 },
     ]);
     expect(ffmpegCalls).toHaveLength(1);
@@ -124,6 +135,7 @@ describe("RenderService", () => {
     expect(ffmpegCalls[0]?.narrationAudioPath).toContain("render-1.wav");
     expect(ffmpegCalls[0]?.clipStart).toBe(10);
     expect(ffmpegCalls[0]?.clipDuration).toBe(5);
+    expect(ffmpegCalls[0]?.captionsPath).toContain("captions.ass");
     expect(failures).toEqual([]);
     expect(job.errorCode).toBeNull();
   });
@@ -195,4 +207,20 @@ describe("resolveProjectMediaPath", () => {
       "Invalid media path.",
     );
   });
+});
+
+it("persists caption failures and does not render without synchronized captions", async () => {
+  const { service, failures, ffmpegCalls } = createHarness({
+    captionError: new CaptionServiceError(
+      "WHISPER_UNAVAILABLE",
+      "Configure Whisper.",
+    ),
+  });
+  await expect(service.render("render-1")).rejects.toMatchObject({
+    code: "WHISPER_UNAVAILABLE",
+  });
+  expect(failures).toEqual([
+    { errorCode: "WHISPER_UNAVAILABLE", errorMessage: "Configure Whisper." },
+  ]);
+  expect(ffmpegCalls).toHaveLength(0);
 });
