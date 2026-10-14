@@ -1,3 +1,4 @@
+import { apiRequest } from "./api";
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -27,9 +28,10 @@ export default function Sidebar({
     const loadProjects = async () => {
       setError(null);
       try {
-        const response = await fetch("/api/projects");
-        if (!response.ok) throw new Error("Unable to load projects.");
-        const body = (await response.json()) as ProjectListItem[];
+        const body = await apiRequest<ProjectListItem[]>(
+          "/api/projects",
+          "Unable to load projects.",
+        );
         if (!ignore) setProjects(body);
       } catch (caught) {
         if (!ignore) {

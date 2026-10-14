@@ -2,6 +2,12 @@
 
 This is a lightweight implementation plan.
 
+Implemented service items below describe code covered by automated tests, not a
+verified end-to-end render with local binaries. The UI currently creates a job
+only. Next: connect narration and rendering through a single-worker queue, then
+add polling and output preview. audio.cpp CLI arguments and voice configuration
+still need verification against the executable installed on the user's machine.
+
 Do not create detailed specs for every task.
 
 Complete phases in order.
@@ -50,7 +56,6 @@ pnpm test
 Use mocked data initially if it speeds development.
 
 Do not over-polish animations.
-ppm i drizzle-orm@rc @libsql/client dotenv
 ---
 
 # Phase 2 — SQLite + API
@@ -103,12 +108,12 @@ Do not attempt every codec/container.
 # Phase 4 — TTS
 
 - [ ] Add audio.cpp configuration
-- [ ] Create `audio-cpp.service.ts`
-- [ ] Validate executable exists
-- [ ] Generate narration WAV
-- [ ] Determine narration duration
-- [ ] Store narration path
-- [ ] Surface useful TTS errors
+- [x] Create `audio-cpp.service.ts`
+- [x] Validate executable exists
+- [x] Generate narration WAV
+- [x] Determine narration duration
+- [x] Store narration path
+- [x] Surface useful TTS errors
 
 Development fallback:
 
@@ -120,14 +125,14 @@ Do not ship fake TTS as finished functionality.
 
 # Phase 5 — Video render
 
-- [ ] Create FFmpeg service
-- [ ] Validate clip bounds
-- [ ] Cut source clip
-- [ ] Crop/scale to 1080x1920
-- [ ] Mix narration
-- [ ] Reduce gameplay audio volume
-- [ ] Export H.264/AAC MP4
-- [ ] Store result
+- [x] Create FFmpeg service
+- [x] Validate clip bounds
+- [x] Cut source clip
+- [x] Crop/scale to 1080x1920
+- [x] Mix narration
+- [x] Reduce gameplay audio volume
+- [x] Export H.264/AAC MP4
+- [x] Store result
 - [ ] Preview result in UI
 
 Initial output:
@@ -157,7 +162,7 @@ Do not create a visual caption editor.
 # Phase 7 — Render queue
 
 - [ ] Create in-process render queue
-- [ ] Persist job status
+- [x] Persist job status
 - [ ] Add status polling
 - [ ] Show stage in UI
 - [ ] Handle failures
@@ -186,17 +191,17 @@ Add only useful tests.
 
 ## Unit
 
-- [ ] timestamp parser
-- [ ] clip end calculation
-- [ ] render request schema
-- [ ] source bounds validation
-- [ ] FFmpeg argument builder
+- [x] timestamp parser
+- [x] clip end calculation
+- [x] render request schema
+- [x] source bounds validation
+- [x] FFmpeg argument builder
 
 ## API
 
-- [ ] create project happy path
-- [ ] invalid render request
-- [ ] unknown project
+- [x] create project happy path
+- [x] invalid render request
+- [x] unknown project
 
 Avoid broad snapshot testing.
 

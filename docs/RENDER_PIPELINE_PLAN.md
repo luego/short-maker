@@ -39,11 +39,11 @@ Main gaps:
 
 - `POST /api/renders` only creates a queued job; it does not enqueue processing.
 - No in-process render queue yet.
-- No FFmpeg render service yet.
-- No clip bounds validation service/helper yet.
+- FFmpeg render service exists; local binary execution remains to be verified.
+- Clip bounds validation and render orchestration exist with unit tests.
 - No captions service yet.
 - No final output route/preview/download API yet.
-- No output path persistence beyond schema field availability.
+- Output path persistence exists in render orchestration.
 - No stale job recovery on server startup yet.
 - No UI polling beyond basic queued status message.
 
