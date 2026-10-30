@@ -1,4 +1,3 @@
-import { createReadStream } from "node:fs";
 import path from "node:path";
 import { projectIdSchema } from "@short-maker/shared";
 import { Router } from "express";
@@ -54,7 +53,7 @@ export function createMediaRouter(
     });
   });
 
-  router.get("/", async (request, response) => {
+  router.get("/", async (request, response, next) => {
     const projectId = projectIdSchema.parse(
       (request.params as { id?: string }).id,
     );
@@ -71,7 +70,9 @@ export function createMediaRouter(
       throw new ApiError(400, "INVALID_MEDIA_PATH", "Invalid media path.");
     }
     response.type(path.extname(filePath));
-    createReadStream(filePath).pipe(response);
+    response.sendFile(filePath, (error) => {
+      if (error) next(error);
+    });
   });
 
   return router;

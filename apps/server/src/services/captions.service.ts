@@ -4,6 +4,10 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { z } from "zod";
 import { mediaRoot } from "../lib/paths.js";
+import {
+  captionSettingsSchema,
+  type CaptionSettings,
+} from "@short-maker/shared";
 
 const execFileAsync = promisify(execFile);
 type Runner = (command: string, args: string[]) => Promise<void>;
@@ -87,7 +91,14 @@ function assTimestamp(seconds: number) {
   return `${hours}:${String(minutes).padStart(2, "0")}:${String(wholeSeconds).padStart(2, "0")}.${String(centiseconds % 100).padStart(2, "0")}`;
 }
 
-export function buildAss(cues: CaptionCue[]) {
+export function buildAss(
+  cues: CaptionCue[],
+  settings?: Partial<CaptionSettings>,
+) {
+  const style = captionSettingsSchema.parse(settings ?? {});
+  const primaryColor = style.color === "yellow" ? "&H0000FFFF" : "&H00FFFFFF";
+  const alignment = style.position === "lower" ? 2 : 5;
+  const marginV = style.position === "lower" ? 380 : 0;
   return `[Script Info]
 ScriptType: v4.00+
 PlayResX: 1080
@@ -96,7 +107,7 @@ WrapStyle: 0
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: RobloxRant,Arial,72,&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,4,1,5,90,90,0,1
+Style: RobloxRant,${style.fontFamily},${style.fontSize},${primaryColor},${primaryColor},&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,${style.outline},1,${alignment},90,90,${marginV},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -135,6 +146,7 @@ export class CaptionsService {
     renderId: string;
     narrationAudioPath: string;
     narrationDuration: number;
+    settings?: Partial<CaptionSettings>;
   }) {
     z.string()
       .regex(/^[a-zA-Z0-9-]+$/)
@@ -194,7 +206,7 @@ export class CaptionsService {
         await readFile(srt, "utf8"),
         input.narrationDuration,
       );
-      await writeFile(ass, buildAss(cues), "utf8");
+      await writeFile(ass, buildAss(cues, input.settings), "utf8");
       return ass;
     } catch (error) {
       if (error instanceof CaptionServiceError) throw error;

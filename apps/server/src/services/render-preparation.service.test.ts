@@ -8,6 +8,7 @@ type Job = {
   projectId: string;
   script: string;
   voiceId: string;
+  voiceSpeed?: number;
   status?: string;
   narrationAudioPath?: string | null;
   narrationDuration?: number | null;
@@ -21,6 +22,7 @@ function createHarness(options?: { ttsError?: Error }) {
     projectId: "project-1",
     script: "Hello narration",
     voiceId: "voice-1",
+    voiceSpeed: 1.18,
   };
   const failures: Array<{ errorCode: string; errorMessage: string }> = [];
   const statuses: Array<{ status: string; progress?: number }> = [];
@@ -56,6 +58,7 @@ function createHarness(options?: { ttsError?: Error }) {
           renderId: "render-1",
           text: "Hello narration",
           voiceId: "voice-1",
+          speed: 1.18,
         });
         return {
           absolutePath: "/abs/narration.wav",

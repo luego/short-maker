@@ -1,5 +1,26 @@
 # UI Guidelines
 
+## Current editor
+
+The project editor uses a two-column desktop layout: compact project/source
+controls, a script editor and tabbed caption/voice settings on the left, and a
+sticky 9:16 live preview on the right. On tablets the preview becomes a compact
+horizontal card above the form. Mobile stacks the panels and keeps navigation
+scrollable.
+
+The preview uses a muted HTML video and React text overlay; script edits need no
+TTS or render request. Phrase timings use a 165 words/minute planning clock,
+adjusted for voice speed, and are explicitly approximate. Final captions use
+Whisper timings. Font sizes and placement use the 1080x1920 output coordinates.
+Style changes remain visible while playing; script/start/speed changes reset the
+preview. Users can play, pause, seek, and restart. Source loading failures offer
+a retry action.
+
+Caption settings apply to export as well as preview. Voice delivery controls tune
+pacing; they do not claim emotional or voice-cloning capabilities. Audio is only
+generated when the user submits a render. Render settings are persisted with each
+job; unfinished form edits are local component state, not saved project drafts.
+
 ## Direction
 
 Modern, minimal creator utility.

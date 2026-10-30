@@ -4,11 +4,16 @@ import { ApiError } from "../lib/api-error.js";
 
 export const errorMiddleware: ErrorRequestHandler = (
   error,
-  _request,
+  request,
   response,
   next,
 ) => {
-  void next;
+  // Seeking/reloading a video normally cancels the previous media response.
+  if (request.aborted || response.destroyed) return;
+  if (response.headersSent) {
+    next(error);
+    return;
+  }
   if (error instanceof ZodError) {
     response.status(400).json({
       error: { code: "VALIDATION_ERROR", message: "Invalid request." },

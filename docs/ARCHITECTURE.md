@@ -111,7 +111,15 @@ Example:
   "script": "Narration text",
   "startSeconds": 523,
   "voiceId": "roblox-rant-default",
-  "templateId": "roblox-rant"
+  "templateId": "roblox-rant",
+  "voiceSpeed": 1.18,
+  "captionSettings": {
+    "fontFamily": "Arial",
+    "fontSize": 72,
+    "color": "white",
+    "outline": 4,
+    "position": "center"
+  }
 }
 ```
 
@@ -131,6 +139,13 @@ GET /api/renders/:id
 ```
 
 Do not keep the HTTP request open for the entire render.
+
+`voiceSpeed` and `captionSettings` are optional for existing clients. Old jobs
+retain speed 1.0 and default caption styling. Settings are validated with shared
+Zod schemas and stored in `render_jobs` (speed as a number and captions as JSON).
+Kokoro receives the speaking rate; ASS generation receives the caption settings.
+The browser's live preview is independent of audio generation and the render
+queue. It uses estimated phrase timings and CSS styles in output coordinates.
 
 ## Queue
 

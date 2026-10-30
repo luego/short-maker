@@ -10,6 +10,17 @@ Whisper base transcription, ASS captions, and FFmpeg. See `docs/SETUP_MACOS.md`.
 
 Do not create detailed specs for every task.
 
+Live editor improvements implemented:
+
+- [x] Responsive form with a sticky 9:16 preview on desktop
+- [x] Instant text-only subtitle preview with muted playback and seeking
+- [x] Caption font, size, color, outline, and placement controls applied to export
+- [x] Configurable voice speed with Rant and Natural pacing presets
+- [x] Persist and validate per-render styling and speaking rate
+
+Preview timings remain estimates until narration/Whisper processing. Voice
+emotion control and saved project drafts are not implemented.
+
 Complete phases in order.
 
 ---

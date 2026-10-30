@@ -1,5 +1,5 @@
 import { apiRequest } from "./api";
-import { Plus } from "lucide-react";
+import { Clapperboard, Film, HardDrive, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type ProjectListItem = {
@@ -51,22 +51,27 @@ export default function Sidebar({
   }, [refreshKey]);
 
   return (
-    <aside className="w-64 flex-shrink-0 border-r border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-      <div className="p-4">
-        <button
-          type="button"
-          onClick={onSelectNew}
-          className="flex w-full items-center rounded px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
-        >
-          <Plus className="mr-2" size={16} />
+    <aside className="workspace-sidebar" aria-label="Project navigation">
+      <div className="brand">
+        <span className="brand-icon">
+          <Clapperboard size={19} />
+        </span>
+        <span>
+          short<span className="brand-light">maker</span>
+          <small>CREATOR STUDIO</small>
+        </span>
+      </div>
+      <div className="sidebar-create">
+        <button type="button" onClick={onSelectNew} className="button-primary">
+          <Plus size={16} />
           New Project
         </button>
       </div>
-      <div className="px-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
-        Projects
+      <div className="sidebar-section-label">
+        Your projects <span>{projects.length}</span>
       </div>
       {error && <p className="px-4 py-2 text-sm text-red-600">{error}</p>}
-      <ul className="mt-1 p-4 pt-2">
+      <ul className="project-list">
         {projects.length === 0 && !error ? (
           <li className="px-3 py-2 text-sm text-gray-500">No projects yet.</li>
         ) : null}
@@ -75,22 +80,29 @@ export default function Sidebar({
             <button
               type="button"
               onClick={() => onSelectProject(project.id)}
-              className={`w-full rounded px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                project.id === selectedProjectId
-                  ? "bg-gray-100 font-semibold"
-                  : ""
-              }`}
+              className={`project-link ${project.id === selectedProjectId ? "is-selected" : ""}`}
+              aria-current={
+                project.id === selectedProjectId ? "page" : undefined
+              }
             >
-              <span className="block truncate">{project.name}</span>
-              {project.sourceFilename ? (
-                <span className="block truncate text-xs font-normal text-gray-500">
-                  {project.sourceFilename}
-                </span>
-              ) : null}
+              <span className="project-icon">
+                <Film size={16} />
+              </span>
+              <span className="project-link-copy">
+                <strong>{project.name}</strong>
+                <small>{project.sourceFilename ?? "No source video"}</small>
+              </span>
             </button>
           </li>
         ))}
       </ul>
+      <div className="sidebar-footer">
+        <HardDrive size={16} />
+        <div>
+          <strong>Made on your machine.</strong>
+          <p>Your media stays local.</p>
+        </div>
+      </div>
     </aside>
   );
 }

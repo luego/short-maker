@@ -8,10 +8,8 @@ export default function TimestampInput({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="mb-4">
-      <label className="mb-1 block text-sm font-medium" htmlFor="start-time">
-        Start Time
-      </label>
+    <div className="field timestamp-field">
+      <label htmlFor="start-time">Start Time</label>
       <input
         id="start-time"
         type="text"
@@ -20,7 +18,6 @@ export default function TimestampInput({
         aria-invalid={Boolean(error)}
         aria-describedby={error ? "start-time-error" : undefined}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded border p-2"
       />
       {error && (
         <p

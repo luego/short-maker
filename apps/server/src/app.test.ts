@@ -159,6 +159,14 @@ describe("renders API", () => {
         startSeconds: 0,
         voiceId: "default",
         templateId: "roblox-rant",
+        voiceSpeed: 1.18,
+        captionSettings: {
+          fontFamily: "Georgia",
+          fontSize: 88,
+          color: "yellow",
+          outline: 6,
+          position: "lower",
+        },
       })
       .expect(201);
 
@@ -166,6 +174,14 @@ describe("renders API", () => {
       projectId: project.body.id,
       status: "queued",
       progress: 0,
+      voiceSpeed: 1.18,
+      captionSettings: {
+        fontFamily: "Georgia",
+        fontSize: 88,
+        color: "yellow",
+        outline: 6,
+        position: "lower",
+      },
     });
 
     expect(enqueue).toHaveBeenCalledWith(created.body.id);
@@ -244,6 +260,37 @@ it("rejects output paths outside the render directory", async () => {
     .get(`/api/renders/${job!.id}/output`)
     .expect(400);
   expect(response.body.error.code).toBe("INVALID_MEDIA_PATH");
+});
+
+it("supports byte-range seeking in the source gameplay preview", async () => {
+  const projects = new ProjectRepository(database);
+  const project = await projects.create({
+    name: "Seek preview",
+    templateId: "roblox-rant",
+  });
+  const directory = path.join(mediaRoot, "sources", project!.id);
+  const source = path.join(directory, "source.mp4");
+  await mkdir(directory, { recursive: true });
+  await writeFile(source, Buffer.from("0123456789"));
+  try {
+    await projects.setSourceVideo(project!.id, {
+      sourceVideoPath: path.relative(projectRoot, source),
+      sourceFilename: "source.mp4",
+      sourceDuration: 10,
+      sourceWidth: 1080,
+      sourceHeight: 1920,
+      sourceFps: 30,
+    });
+    const result = await request(app)
+      .get(`/api/projects/${project!.id}/source-video`)
+      .set("Range", "bytes=3-6")
+      .expect(206);
+    expect(result.headers["content-range"]).toBe("bytes 3-6/10");
+    expect(result.headers["content-length"]).toBe("4");
+  } finally {
+    await rm(source, { force: true });
+    await rmdir(directory);
+  }
 });
 
 it("serves a completed output with byte ranges for browser playback", async () => {

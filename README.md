@@ -86,7 +86,29 @@ been replaced by the queued workflow; services remain independently callable.
 
 Validation: the FFmpeg service has also produced a real 1080x1920, 30 fps MP4
 from generated video/audio test inputs. This checks media rendering, not TTS or
-speech recognition. Full manual browser verification remains pending.
+speech recognition. The live editor and custom-caption export were also verified
+through the browser on Apple Silicon.
+
+## Live editor
+
+The editor has a responsive form and a sticky 9:16 preview. Editing the script
+updates estimated caption phrases immediately in the browser, without generating
+audio or starting render jobs. Playback is muted; play, pause, restart, and seek
+operate on the source video from the selected start time. Imported source videos
+support byte-range requests for seeking.
+
+Caption controls include Arial/Verdana/Georgia, font size, white/yellow text,
+outline, and center/lower placement. These settings are validated and persisted
+per render and applied to the exported ASS subtitles. Preview timings and line
+breaks are approximate; final timing comes from Whisper after voice generation.
+Fonts must be available on the rendering machine; FFmpeg may substitute missing
+fonts.
+
+Voice controls include Spanish/English voices, a 1.18x Roblox Rant pacing preset,
+a natural 1.00x preset, and speeds between 0.80x and 1.35x. The selected speed is
+passed to Kokoro during generation and also adjusts duration estimates and silent
+preview timing. These are pacing controls, not an emotional voice model or a
+guarantee of a specific performance. Audio is generated only on Generate Short.
 
 ## Synchronized captions
 

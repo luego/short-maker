@@ -4,11 +4,12 @@ export function getDurationPreview(
   script: string,
   timestamp: string,
   sourceDuration?: number | null,
+  speed = 1,
 ) {
   const wordCount = script.trim() ? script.trim().split(/\s+/u).length : 0;
   // Planning heuristic, not a measurement of the selected voice.
-  const minSeconds = (wordCount / 190) * 60;
-  const maxSeconds = (wordCount / 140) * 60;
+  const minSeconds = ((wordCount / 190) * 60) / speed;
+  const maxSeconds = ((wordCount / 140) * 60) / speed;
   const videoSeconds =
     typeof sourceDuration === "number" &&
     Number.isFinite(sourceDuration) &&

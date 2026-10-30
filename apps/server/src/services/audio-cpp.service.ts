@@ -3,6 +3,7 @@ import { access, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { mediaRoot, projectRoot } from "../lib/paths.js";
+import { voiceSpeedSchema } from "@short-maker/shared";
 
 const execFileAsync = promisify(execFile);
 
@@ -20,6 +21,7 @@ export interface TtsGenerateInput {
   renderId: string;
   text: string;
   voiceId: string;
+  speed?: number;
 }
 
 export interface TtsGenerateResult {
@@ -74,6 +76,8 @@ function defaultArgsBuilder(input: ArgsBuilderInput) {
     "cpu",
     "--voice-id",
     voice,
+    "--speaking-rate",
+    String(voiceSpeedSchema.parse(input.speed ?? 1)),
     "--text",
     input.text,
     "--out",

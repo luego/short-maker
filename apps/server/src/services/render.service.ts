@@ -3,6 +3,7 @@ import { CaptionsService, CaptionServiceError } from "./captions.service.js";
 import path from "node:path";
 import { ApiError } from "../lib/api-error.js";
 import { projectRoot } from "../lib/paths.js";
+import type { CaptionSettings } from "@short-maker/shared";
 import type {
   RenderJobFailure,
   RenderOutput,
@@ -22,6 +23,7 @@ interface RenderJobForRender {
   startSeconds: number;
   narrationAudioPath: string | null;
   narrationDuration: number | null;
+  captionSettings?: Partial<CaptionSettings>;
 }
 
 interface ProjectLookup {
@@ -104,6 +106,7 @@ export class RenderService {
           renderJob.narrationAudioPath,
         ),
         narrationDuration: clip.clipDuration,
+        settings: renderJob.captionSettings,
       });
       await this.renderJobs.setStatus(renderId, "rendering", 70);
       const output = await this.ffmpeg.renderVideo({

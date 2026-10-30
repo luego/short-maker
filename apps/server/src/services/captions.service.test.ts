@@ -2,6 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, it } from "vitest";
+import { captionSettingsSchema } from "@short-maker/shared";
 import {
   buildAss,
   CaptionsService,
@@ -47,6 +48,24 @@ it("reports missing Whisper configuration rather than fabricating captions", asy
       narrationDuration: 3,
     }),
   ).rejects.toMatchObject({ code: "WHISPER_UNAVAILABLE" });
+});
+
+it("applies validated typography, color, outline and lower-third placement to exported ASS", () => {
+  const result = buildAss([{ start: 0, end: 2, text: "My caption" }], {
+    fontFamily: "Georgia",
+    fontSize: 88,
+    color: "yellow",
+    outline: 6,
+    position: "lower",
+  });
+  expect(result).toContain(
+    "Style: RobloxRant,Georgia,88,&H0000FFFF,&H0000FFFF",
+  );
+  expect(result).toContain("100,100,0,0,1,6,1,2,90,90,380,1");
+  expect(
+    captionSettingsSchema.safeParse({ fontFamily: "Arial,\\N{\\pos(0,0)}" })
+      .success,
+  ).toBe(false);
 });
 
 it("normalizes audio, invokes Whisper with argument arrays, writes ASS, and cleans intermediate files", async () => {

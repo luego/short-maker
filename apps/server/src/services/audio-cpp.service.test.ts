@@ -82,6 +82,7 @@ describe("AudioCppService", () => {
       renderId: "render",
       text: "Hello; rm -rf nope",
       voiceId: "voice; nope",
+      speed: 1.18,
     });
 
     expect(calls).toHaveLength(1);
@@ -91,6 +92,9 @@ describe("AudioCppService", () => {
     expect(calls[0]?.args).toContain("--text");
     expect(calls[0]?.args).toContain("Hello; rm -rf nope");
     expect(calls[0]?.args).toContain("--voice-id");
+    expect(calls[0]?.args[calls[0].args.indexOf("--speaking-rate") + 1]).toBe(
+      "1.18",
+    );
     expect(calls[0]?.args).toContain("voice; nope");
     expect(calls[0]?.args).toContain("--out");
     expect(result.absolutePath).toBe(

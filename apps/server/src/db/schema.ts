@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import type { CaptionSettings } from "@short-maker/shared";
 import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 const timestamps = {
@@ -33,6 +34,11 @@ export const renderJobs = sqliteTable("render_jobs", {
   narrationAudioPath: text("narration_audio_path"),
   narrationDuration: real("narration_duration"),
   voiceId: text("voice_id").notNull(),
+  voiceSpeed: real("voice_speed").notNull().default(1),
+  captionSettings: text("caption_settings", { mode: "json" })
+    .$type<Partial<CaptionSettings>>()
+    .notNull()
+    .default(sql`'{}'`),
   templateId: text("template_id").notNull(),
   status: text("status").notNull().default("queued"),
   progress: integer("progress").notNull().default(0),

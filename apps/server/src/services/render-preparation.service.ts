@@ -15,6 +15,7 @@ interface RenderJobForNarration {
   projectId: string;
   script: string;
   voiceId: string;
+  voiceSpeed?: number;
 }
 
 interface RenderJobStore {
@@ -64,6 +65,7 @@ export class RenderPreparationService {
         renderId: job.id,
         text: job.script,
         voiceId: job.voiceId,
+        speed: job.voiceSpeed ?? 1,
       });
       const narrationDuration = await this.probe.probeDuration(
         narration.absolutePath,
