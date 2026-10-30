@@ -1,5 +1,5 @@
 import path from "node:path";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it } from "vitest";
 import { AudioCppService, TtsServiceError } from "./audio-cpp.service.js";
@@ -55,10 +55,9 @@ describe("AudioCppService", () => {
     ).rejects.toMatchObject({ code: "TTS_UNAVAILABLE" });
   });
 
-  it("invokes audio.cpp with arguments instead of a shell command and writes text through a temp file", async () => {
+  it("passes model, text and voice to the real CLI as separate arguments", async () => {
     const root = await makeTempDir();
     const audioRoot = path.join(root, "audio");
-    const tempRoot = path.join(root, "temp");
     const calls: Array<{ command: string; args: string[] }> = [];
 
     const service = new AudioCppService(
@@ -70,10 +69,12 @@ describe("AudioCppService", () => {
         await writeFile(outputPath, "wav");
       },
       async (filePath) =>
-        filePath === "/tools/audio-cpp.exe" || filePath.endsWith("render.wav"),
+        filePath === "/tools/audio-cpp.exe" ||
+        filePath === "/models/kokoro.gguf" ||
+        filePath.endsWith("render.wav"),
       undefined,
       audioRoot,
-      tempRoot,
+      "/models/kokoro.gguf",
     );
 
     const result = await service.generate({
@@ -85,10 +86,13 @@ describe("AudioCppService", () => {
 
     expect(calls).toHaveLength(1);
     expect(calls[0]?.command).toBe("/tools/audio-cpp.exe");
-    expect(calls[0]?.args).toContain("--text-file");
-    expect(calls[0]?.args).toContain("--voice");
+    expect(calls[0]?.args).toContain("kokoro_tts");
+    expect(calls[0]?.args).toContain("/models/kokoro.gguf");
+    expect(calls[0]?.args).toContain("--text");
+    expect(calls[0]?.args).toContain("Hello; rm -rf nope");
+    expect(calls[0]?.args).toContain("--voice-id");
     expect(calls[0]?.args).toContain("voice; nope");
-    expect(calls[0]?.args).toContain("--output");
+    expect(calls[0]?.args).toContain("--out");
     expect(result.absolutePath).toBe(
       path.join(audioRoot, "project", "render.wav"),
     );
@@ -97,33 +101,51 @@ describe("AudioCppService", () => {
     ).toBe(true);
   });
 
-  it("removes the temporary text file after successful generation", async () => {
+  it("maps the previous default voice to a packaged Spanish voice", async () => {
     const root = await makeTempDir();
-    const tempRoot = path.join(root, "temp");
-    let textFilePath = "";
 
     const service = new AudioCppService(
       "/tools/audio-cpp.exe",
       async (_command, args) => {
-        textFilePath = args[1] ?? "";
-        expect(await readFile(textFilePath, "utf8")).toBe("Hello");
+        expect(args[args.indexOf("--voice-id") + 1]).toBe("em_alex");
         await writeFile(args.at(-1) ?? "", "wav");
       },
       async (filePath) =>
-        filePath === "/tools/audio-cpp.exe" || filePath.endsWith("render.wav"),
+        filePath === "/tools/audio-cpp.exe" ||
+        filePath === "/models/kokoro.gguf" ||
+        filePath.endsWith("render.wav"),
       undefined,
       path.join(root, "audio"),
-      tempRoot,
+      "/models/kokoro.gguf",
     );
 
     await service.generate({
       projectId: "project",
       renderId: "render",
       text: "Hello",
-      voiceId: "voice",
+      voiceId: "default-voice",
     });
+  });
 
-    await expect(readFile(textFilePath, "utf8")).rejects.toThrow();
+  it("reports a missing model before invoking TTS", async () => {
+    const service = new AudioCppService(
+      "/tools/audio-cpp",
+      async () => {
+        throw new Error("Must not run without a model");
+      },
+      async (filePath) => filePath === "/tools/audio-cpp",
+      undefined,
+      undefined,
+      "/missing/kokoro.gguf",
+    );
+    await expect(
+      service.generate({
+        projectId: "project",
+        renderId: "render",
+        text: "Hello",
+        voiceId: "em_alex",
+      }),
+    ).rejects.toMatchObject({ code: "TTS_UNAVAILABLE" });
   });
 
   it("wraps runner failures in a typed TTS error", async () => {
@@ -133,10 +155,12 @@ describe("AudioCppService", () => {
       async () => {
         throw new Error("boom");
       },
-      async (filePath) => filePath === "/tools/audio-cpp.exe",
+      async (filePath) =>
+        filePath === "/tools/audio-cpp.exe" ||
+        filePath === "/models/kokoro.gguf",
       undefined,
       path.join(root, "audio"),
-      path.join(root, "temp"),
+      "/models/kokoro.gguf",
     );
 
     await expect(

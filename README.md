@@ -63,16 +63,25 @@ YouTube upload/scheduling and AI script generation are future phases.
 
 ## Current render workflow
 
+The server applies pending Drizzle migrations before accepting requests, including
+after pulling updates. You can also apply them manually with
+`pnpm --filter @short-maker/server db:migrate`.
+
 `POST /api/renders` validates the project source, persists a job, and enqueues it
 without waiting for video processing. One render runs at a time. The UI polls
 `GET /api/renders/:id`, restores the last job per project after reload, and shows
 preview/download using `GET /api/renders/:id/output`. Non-terminal jobs are marked
 failed after a server restart so they can be submitted again.
 
-Configure `FFMPEG_PATH`, `FFPROBE_PATH`, and `AUDIO_CPP_PATH` in the server's
-`.env`. FFmpeg defaults to `ffmpeg` on PATH. The audio.cpp adapter currently expects
-`--text-file`, `--voice`, and `--output`; verify these flags and voice IDs against
-your installed executable before considering TTS ready. Captions require a configured whisper.cpp executable and model. The previous synchronous preparation/render HTTP endpoints have
+Configure `FFMPEG_PATH`, `FFPROBE_PATH`, `AUDIO_CPP_PATH`, and
+`AUDIO_CPP_MODEL_PATH` in `apps/server/.env`. FFmpeg defaults to `ffmpeg` on PATH.
+The audio.cpp adapter uses `audiocpp_cli` with the Kokoro GGUF model and native
+`--task tts --family kokoro_tts --model ... --voice-id ... --text ... --out ...`
+arguments. Kokoro also requires eSpeak NG. Spanish and English voices are available
+in the UI; `default-voice` from older requests maps to `em_alex`.
+Captions require a configured whisper.cpp executable and model.
+See [macOS setup](docs/SETUP_MACOS.md) for installation and configuration.
+The previous synchronous preparation/render HTTP endpoints have
 been replaced by the queued workflow; services remain independently callable.
 
 Validation: the FFmpeg service has also produced a real 1080x1920, 30 fps MP4
@@ -94,6 +103,6 @@ are removed after transcription, and ASS is removed after rendering finishes or
 fails. Original source videos are preserved.
 
 The ASS burn-in was verified with real FFmpeg, including a Windows path with
-spaces, apostrophes, brackets, and commas. Speech recognition still needs a real
-Whisper executable/model and narration sample. audio.cpp also remains pending
-verification against the installed binary and voice IDs.
+spaces, apostrophes, brackets, and commas. The full queued pipeline was also
+verified on Apple Silicon with real Spanish Kokoro narration, Whisper base
+transcription, and a completed 1080x1920 H.264/AAC MP4.

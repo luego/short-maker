@@ -2,6 +2,7 @@ import { createClient } from "@libsql/client";
 import { mkdir, writeFile, rm, rmdir } from "node:fs/promises";
 import path from "node:path";
 import { drizzle } from "drizzle-orm/libsql";
+import { migrate } from "drizzle-orm/libsql/migrator";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "./app.js";
@@ -35,37 +36,11 @@ beforeEach(async () => {
   await client.executeMultiple(`
     DROP TABLE IF EXISTS render_jobs;
     DROP TABLE IF EXISTS projects;
-    CREATE TABLE projects (
-      id TEXT PRIMARY KEY NOT NULL,
-      name TEXT NOT NULL,
-      source_video_path TEXT,
-      source_filename TEXT,
-      source_duration REAL,
-      source_width INTEGER,
-      source_height INTEGER,
-      source_fps REAL,
-      template_id TEXT NOT NULL DEFAULT 'roblox-rant',
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-    CREATE TABLE render_jobs (
-      id TEXT PRIMARY KEY NOT NULL,
-      project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-      script TEXT NOT NULL,
-      start_seconds REAL NOT NULL,
-      narration_audio_path TEXT,
-      narration_duration REAL,
-      voice_id TEXT NOT NULL,
-      template_id TEXT NOT NULL,
-      status TEXT NOT NULL DEFAULT 'queued',
-      progress INTEGER NOT NULL DEFAULT 0,
-      output_path TEXT,
-      error_code TEXT,
-      error_message TEXT,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
+    DROP TABLE IF EXISTS __drizzle_migrations;
   `);
+  await migrate(database, {
+    migrationsFolder: path.resolve(import.meta.dirname, "../drizzle"),
+  });
 });
 
 describe("projects API", () => {

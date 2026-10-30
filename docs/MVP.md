@@ -29,6 +29,13 @@ The UI displays:
 - character count
 - approximate duration before generation if useful
 
+The creation form shows a planning estimate using 140–190 words/minute and the
+source duration remaining after the selected start. Estimates warn but do not
+reject renders. Invalid or out-of-range start times disable generation. The
+server validates the measured narration before captions/video processing; a
+duration mismatch includes the measured and available seconds and a useful next
+action. The render status also shows its measured narration duration.
+
 No AI script generation in MVP.
 
 ### Step 3 — Select clip start

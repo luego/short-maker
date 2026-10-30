@@ -39,16 +39,17 @@ Main gaps:
 
 - `POST /api/renders` creates a job and immediately enqueues background processing.
 - A single-worker in-process queue exists; interrupted jobs fail on startup.
-- FFmpeg render service exists; local binary execution remains to be verified.
+- FFmpeg render service exists and local binary execution has been verified.
 - Clip bounds validation and render orchestration exist with unit tests.
-- Captions service uses whisper.cpp SRT timings and generates the Roblox Rant ASS preset. Real recognition remains pending executable/model configuration.
+- Captions service uses whisper.cpp SRT timings and generates the Roblox Rant ASS preset. Real recognition has been verified with Whisper base on macOS.
 - Output streaming, UI preview, and download are implemented.
 - Output path persistence exists in render orchestration.
 - Stale non-terminal jobs are marked failed on startup.
 - UI polls job status and restores the last render per project after reload.
 
 The stages below retain the original design plan; the capability list above records
-the current implementation. Real whisper.cpp recognition and audio.cpp verification remain pending.
+the current implementation. The full audio.cpp/Kokoro, Whisper, and FFmpeg pipeline
+has been verified on Apple Silicon. See `docs/SETUP_MACOS.md` for configuration.
 
 ## Target pipeline
 
@@ -108,10 +109,10 @@ Status:
 
 Behavior:
 
-1. Write script to a temporary text file.
-2. Invoke `audio.cpp` with `execFile(command, args)`.
+1. Validate the audio.cpp executable and Kokoro GGUF model paths.
+2. Invoke `audiocpp_cli` with `execFile(command, args)` and the script as a separate `--text` argument.
 3. Verify the output WAV exists.
-4. Remove temporary text file in `finally`.
+4. Return the narration path for duration measurement.
 
 Expected errors:
 

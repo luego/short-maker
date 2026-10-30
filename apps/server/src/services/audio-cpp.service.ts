@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { access, mkdir, rm, writeFile } from "node:fs/promises";
+import { access, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { mediaRoot, projectRoot } from "../lib/paths.js";
@@ -31,14 +31,25 @@ type Runner = (command: string, args: string[]) => Promise<void>;
 type FileExists = (filePath: string) => Promise<boolean>;
 
 type ArgsBuilderInput = TtsGenerateInput & {
-  textFilePath: string;
+  modelPath: string;
   outputPath: string;
 };
 
 type ArgsBuilder = (input: ArgsBuilderInput) => string[];
 
 async function defaultRunner(command: string, args: string[]) {
-  await execFileAsync(command, args, { maxBuffer: 1024 * 1024 });
+  try {
+    await execFileAsync(command, args, { maxBuffer: 1024 * 1024 });
+    console.log(JSON.stringify({ event: "tts.process_exit", exitCode: 0 }));
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        event: "tts.process_exit",
+        exitCode: (error as { code?: unknown }).code,
+      }),
+    );
+    throw error;
+  }
 }
 
 async function defaultFileExists(filePath: string) {
@@ -51,12 +62,21 @@ async function defaultFileExists(filePath: string) {
 }
 
 function defaultArgsBuilder(input: ArgsBuilderInput) {
+  const voice = input.voiceId === "default-voice" ? "em_alex" : input.voiceId;
   return [
-    "--text-file",
-    input.textFilePath,
-    "--voice",
-    input.voiceId,
-    "--output",
+    "--task",
+    "tts",
+    "--family",
+    "kokoro_tts",
+    "--model",
+    input.modelPath,
+    "--backend",
+    "cpu",
+    "--voice-id",
+    voice,
+    "--text",
+    input.text,
+    "--out",
     input.outputPath,
   ];
 }
@@ -68,7 +88,7 @@ export class AudioCppService {
     private readonly fileExists: FileExists = defaultFileExists,
     private readonly argsBuilder: ArgsBuilder = defaultArgsBuilder,
     private readonly audioRoot = path.join(mediaRoot, "audio"),
-    private readonly tempRoot = path.join(mediaRoot, "temp"),
+    private readonly modelPath = process.env.AUDIO_CPP_MODEL_PATH,
   ) {}
 
   async generate(input: TtsGenerateInput): Promise<TtsGenerateResult> {
@@ -86,18 +106,22 @@ export class AudioCppService {
       );
     }
 
+    if (!this.modelPath || !(await this.fileExists(this.modelPath))) {
+      throw new TtsServiceError(
+        "TTS_UNAVAILABLE",
+        "Kokoro model was not found. Set AUDIO_CPP_MODEL_PATH to the Kokoro GGUF file.",
+      );
+    }
+
     const directory = path.join(this.audioRoot, input.projectId);
     const outputPath = path.join(directory, `${input.renderId}.wav`);
-    const textFilePath = path.join(this.tempRoot, `${input.renderId}.txt`);
 
     await mkdir(directory, { recursive: true });
-    await mkdir(this.tempRoot, { recursive: true });
-    await writeFile(textFilePath, input.text, "utf8");
 
     try {
       await this.runner(
         this.executable,
-        this.argsBuilder({ ...input, textFilePath, outputPath }),
+        this.argsBuilder({ ...input, modelPath: this.modelPath, outputPath }),
       );
 
       if (!(await this.fileExists(outputPath))) {
@@ -117,8 +141,6 @@ export class AudioCppService {
         "TTS_GENERATION_FAILED",
         "audio.cpp failed to generate narration audio.",
       );
-    } finally {
-      await rm(textFilePath, { force: true });
     }
   }
 }

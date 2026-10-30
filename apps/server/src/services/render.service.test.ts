@@ -157,8 +157,9 @@ describe("RenderService", () => {
     expect(failures).toEqual([
       {
         errorCode: "SOURCE_VIDEO_TOO_SHORT",
-        errorMessage:
-          "The selected gameplay video ends before the narration finishes.",
+        errorMessage: expect.stringContaining(
+          "Narration is 5.0s, but only 2.0s of video remain.",
+        ),
       },
     ]);
   });

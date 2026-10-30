@@ -10,8 +10,13 @@ import { ProbeService } from "./services/probe.service.js";
 import { FfmpegService } from "./services/ffmpeg.service.js";
 import { RenderPreparationService } from "./services/render-preparation.service.js";
 import { RenderService } from "./services/render.service.js";
+import { migrate } from "drizzle-orm/libsql/migrator";
+import path from "node:path";
 
 const port = Number(process.env.PORT ?? 4300);
+await migrate(database, {
+  migrationsFolder: path.resolve(import.meta.dirname, "../drizzle"),
+});
 const projects = new ProjectRepository(database);
 const renderJobs = new RenderJobRepository(database);
 const probe = new ProbeService();

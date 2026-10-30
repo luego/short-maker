@@ -79,6 +79,24 @@ describe("calculateClipBounds", () => {
           narrationDuration: 5,
         }),
       ),
-    ).toMatchObject({ code: "SOURCE_VIDEO_TOO_SHORT" });
+    ).toMatchObject({
+      code: "SOURCE_VIDEO_TOO_SHORT",
+      message: expect.stringContaining("Narration is 5.0s, but only 2.0s"),
+    });
+  });
+
+  it("does not suggest an earlier start when narration outlasts the entire video", () => {
+    expect(
+      catchClipError(() =>
+        calculateClipBounds({
+          sourceDuration: 10,
+          startSeconds: 0,
+          narrationDuration: 20,
+        }),
+      ),
+    ).toMatchObject({
+      code: "SOURCE_VIDEO_TOO_SHORT",
+      message: expect.stringContaining("Even starting at 00:00 is too short"),
+    });
   });
 });

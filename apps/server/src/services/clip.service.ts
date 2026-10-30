@@ -54,9 +54,14 @@ export function calculateClipBounds(input: ClipBoundsInput): ClipBounds {
   }
 
   if (clipEnd > sourceDuration) {
+    const remaining = sourceDuration - clipStart;
+    const advice =
+      clipDuration > sourceDuration
+        ? `Even starting at 00:00 is too short. Shorten the script or use a video at least ${clipDuration.toFixed(1)}s long.`
+        : `Choose a start at or before ${(Math.floor((sourceDuration - clipDuration) * 10) / 10).toFixed(1)}s, shorten the script, or use a longer video.`;
     throw new ClipValidationError(
       "SOURCE_VIDEO_TOO_SHORT",
-      "The selected gameplay video ends before the narration finishes.",
+      `Narration is ${clipDuration.toFixed(1)}s, but only ${remaining.toFixed(1)}s of video remain. ${advice}`,
     );
   }
 

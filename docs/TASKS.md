@@ -4,10 +4,9 @@ This is a lightweight implementation plan.
 
 The UI submits renders to a single-worker queue, polls persisted progress, and
 shows preview/download when a job completes. Interrupted jobs fail on startup
-with a retry message. Automated tests cover the queue and API; a real full render
-still needs verified audio.cpp CLI arguments, voice configuration, and a real
-Whisper model. Caption parsing, ASS generation, and FFmpeg burn-in are implemented;
-real speech recognition remains pending local executable/model setup.
+with a retry message. Automated tests cover the queue and API. A real full render
+was verified on Apple Silicon using audio.cpp/Kokoro Spanish narration, eSpeak NG,
+Whisper base transcription, ASS captions, and FFmpeg. See `docs/SETUP_MACOS.md`.
 
 Do not create detailed specs for every task.
 
@@ -108,7 +107,7 @@ Do not attempt every codec/container.
 
 # Phase 4 — TTS
 
-- [ ] Add audio.cpp configuration
+- [x] Add audio.cpp configuration
 - [x] Create `audio-cpp.service.ts`
 - [x] Validate executable exists
 - [x] Generate narration WAV
@@ -182,7 +181,7 @@ One concurrent render is acceptable initially.
 - [ ] Delete project
 - [x] Open/export rendered file
 - [ ] Validate Windows paths
-- [ ] Basic setup documentation
+- [x] Basic setup documentation
 
 ---
 

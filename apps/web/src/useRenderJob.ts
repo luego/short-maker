@@ -5,6 +5,7 @@ export type RenderJob = {
   id: string;
   status: string;
   progress: number;
+  narrationDuration?: number | null;
   errorMessage: string | null;
   outputUrl: string | null;
 };

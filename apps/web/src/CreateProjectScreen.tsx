@@ -1,5 +1,5 @@
-import { parseTimestampToSeconds } from "@short-maker/shared";
 import { useState } from "react";
+import { getDurationPreview } from "./duration-preview";
 import { apiRequest, type Project } from "./api";
 import { useProjectEditor } from "./useProjectEditor";
 import RenderProgress from "./components/RenderProgress";
@@ -40,7 +40,7 @@ export default function CreateProjectScreen({
   } = useProjectEditor(projectId, onProjectSaved);
   const [script, setScript] = useState("");
   const [timestamp, setTimestamp] = useState("");
-  const [voice, setVoice] = useState("default-voice");
+  const [voice, setVoice] = useState("em_alex");
   const [timestampError, setTimestampError] = useState<string | null>(null);
   const [submittingRender, setSubmittingRender] = useState(false);
 
@@ -49,11 +49,17 @@ export default function CreateProjectScreen({
   );
 
   const templates = ["roblox-rant"];
-  const voices = ["default-voice"];
+  const voices = ["em_alex", "ef_dora", "em_santa", "af_heart", "am_adam"];
+  const duration = getDurationPreview(
+    script,
+    timestamp,
+    project?.sourceDuration,
+  );
   const canGenerate = Boolean(
     project?.sourceFilename &&
     script.trim() &&
-    timestamp.trim() &&
+    duration.startSeconds !== null &&
+    !duration.startError &&
     !submittingRender &&
     !rendering &&
     !loadingProject &&
@@ -75,13 +81,8 @@ export default function CreateProjectScreen({
       return;
     }
 
-    let startSeconds: number;
-    try {
-      startSeconds = parseTimestampToSeconds(timestamp);
-    } catch (caught) {
-      setTimestampError(
-        caught instanceof Error ? caught.message : "Enter a valid start time.",
-      );
+    if (duration.startSeconds === null || duration.startError) {
+      setTimestampError(duration.startError ?? "Enter a start time.");
       return;
     }
 
@@ -97,7 +98,7 @@ export default function CreateProjectScreen({
           body: JSON.stringify({
             projectId: project.id,
             script: script.trim(),
-            startSeconds,
+            startSeconds: duration.startSeconds,
             voiceId: voice,
             templateId: template,
           }),
@@ -212,7 +213,7 @@ export default function CreateProjectScreen({
 
       <TimestampInput
         value={timestamp}
-        error={timestampError}
+        error={timestampError ?? duration.startError}
         onChange={(value) => {
           setTimestamp(value);
           setTimestampError(null);
@@ -231,9 +232,43 @@ export default function CreateProjectScreen({
           onChange={(event) => setScript(event.target.value)}
         />
         <p className="mt-1 text-xs text-gray-500">
-          Characters: {script.length}
+          Characters: {script.length} · Words: {duration.wordCount}
         </p>
       </div>
+
+      <section
+        className="mb-4 space-y-2 rounded-md border bg-white p-3 text-sm"
+        aria-label="Duration check"
+      >
+        <p className="font-medium">Duration check</p>
+        {duration.videoSeconds !== null && (
+          <p>Source video: {duration.videoSeconds.toFixed(1)}s</p>
+        )}
+        <p>
+          Video remaining from start:{" "}
+          {duration.remainingSeconds !== null
+            ? `${duration.remainingSeconds.toFixed(1)}s`
+            : "Choose a valid start time to check."}
+        </p>
+        {duration.wordCount > 0 && (
+          <p>
+            Estimated narration: {duration.minSeconds.toFixed(1)}–
+            {duration.maxSeconds.toFixed(1)}s
+          </p>
+        )}
+        {duration.mayExceedVideo && (
+          <p role="status" className="text-amber-800">
+            {duration.mayExceedEntireVideo
+              ? "The script may be longer than the entire video, even from 00:00. Shorten the script or upload a longer video."
+              : "The narration may exceed the remaining video. Choose an earlier start, shorten the script, or upload a longer video."}
+          </p>
+        )}
+        <p className="text-xs text-gray-500">
+          Estimate based on 140–190 words/minute; voice and pauses can change
+          it. Exact duration is checked after generating narration, before
+          captions and video rendering. Estimates do not block generation.
+        </p>
+      </section>
 
       <button
         type="button"

@@ -41,6 +41,13 @@ export default function RenderProgress({
           {error ?? job?.errorMessage}
         </p>
       )}
+      {typeof job?.narrationDuration === "number" &&
+        job.narrationDuration > 0 && (
+          <p className="text-sm text-gray-600">
+            Measured narration for this render:{" "}
+            {job.narrationDuration.toFixed(1)}s
+          </p>
+        )}
       {job?.status === "completed" && job.outputUrl && (
         <>
           <video className="mx-auto max-h-96" controls src={job.outputUrl} />
